@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@LIB_INSTALL_DIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@/cutefish-webkit
+
+Name: cutefish-webkit
+Description: WebKit for Cutefish
+URL: https://github.com/cutefishos/cutefish-webkit
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lcutefish-webkit
+Cflags: -I${includedir}
