@@ -4,7 +4,8 @@ The web engine of the Cutefish desktop: a WebKit port based on WPE WebKit
 2.54.2. WebCore, JavaScriptCore and the multi-process WebKit model are
 upstream WebKit on GLib's event loop, as in GTK and WPE; the port adds the
 curl network backend, Skia rendering into DMA-BUF buffers and a C API that
-hands those frames to the embedding application.
+hands those frames to the embedding application. PDF documents open in
+WebKit's bundled PDF.js viewer.
 
 Media, WebGL, WebRTC, accessibility, the sandbox and the inspector are not
 built yet.
@@ -49,5 +50,7 @@ The tree is upstream's `wpewebkit-2.54.2` sources with the port applied.
 
 WebKit's licences apply file by file, mostly BSD-2-Clause and LGPL-2.1; see
 `Source/WebCore/LICENSE-APPLE`, `Source/WebCore/LICENSE-LGPL-2.1` and
-`Source/JavaScriptCore/COPYING.LIB`. Port files derived from WebKit code keep
-their original licence; files written from scratch are BSD-3-Clause.
+`Source/JavaScriptCore/COPYING.LIB`. PDF.js, built into the library, is
+Apache-2.0 (`Source/ThirdParty/pdfjs/LICENSE`). Port files derived from
+WebKit code keep their original licence; files written from scratch are
+BSD-3-Clause.

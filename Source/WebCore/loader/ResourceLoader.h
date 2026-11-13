@@ -230,7 +230,7 @@ private:
     RetainPtr<CFDictionaryRef> connectionProperties(ResourceHandle*) override;
 #endif
 
-#if USE(SOUP)
+#if USE(GLIB)
     void loadGResource();
 #endif
 

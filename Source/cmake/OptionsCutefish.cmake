@@ -27,6 +27,8 @@ if (NOT TARGET SQLite3::SQLite3) # CMake < 4.3
     add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
 endif ()
 
+include(FindGLibCompileResources)
+
 WEBKIT_OPTION_BEGIN()
 
 SET_AND_EXPOSE_TO_BUILD(ENABLE_DEVELOPER_MODE ${DEVELOPER_MODE})

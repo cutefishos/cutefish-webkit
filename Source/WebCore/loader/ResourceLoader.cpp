@@ -256,7 +256,7 @@ void ResourceLoader::start()
         return;
     }
 
-#if USE(SOUP)
+#if USE(GLIB)
     if (m_request.url().protocolIs("resource"_s) || isPDFJSResourceLoad()) {
         loadGResource();
         return;

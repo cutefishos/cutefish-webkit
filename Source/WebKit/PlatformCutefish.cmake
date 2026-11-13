@@ -2,6 +2,11 @@ include(GNUInstallDirs)
 include(Headers.cmake)
 include(Platform/Curl.cmake)
 include(Platform/Skia.cmake)
+include(ModernMediaControlsGResources.cmake)
+
+if (ENABLE_PDFJS)
+    include(PdfJSGResources.cmake)
+endif ()
 
 # The network cache keeps its data in GLib buffers instead of the curl backend's.
 list(REMOVE_ITEM WebKit_SOURCES
@@ -50,6 +55,55 @@ list(APPEND WebKit_SOURCES
     UIProcess/cutefish/PageClientImpl.cpp
 
     UIProcess/WebsiteData/cutefish/WebsiteDataStoreCutefish.cpp
+)
+
+list(APPEND WebKit_DERIVED_SOURCES
+    ${WebKit_DERIVED_SOURCES_DIR}/ModernMediaControlsGResourceBundle.c
+    ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c
+)
+
+WEBKIT_BUILD_MODERN_MEDIA_CONTROLS_GRESOURCES(${WebKit_DERIVED_SOURCES_DIR})
+
+if (ENABLE_PDFJS)
+    list(APPEND WebKit_DERIVED_SOURCES
+        ${WebKit_DERIVED_SOURCES_DIR}/PdfJSGResourceBundle.c
+        ${WebKit_DERIVED_SOURCES_DIR}/PdfJSGResourceBundleExtras.c
+    )
+
+    WEBKIT_BUILD_PDFJS_GRESOURCES(${WebKit_DERIVED_SOURCES_DIR})
+endif ()
+
+set(WebKitResources "")
+list(APPEND WebKitResources
+  "        <file alias='images/missingImage@2x'>missingImage@2x.png</file>\n"
+  "        <file alias='images/missingImage@3x'>missingImage@3x.png</file>\n"
+  "        <file alias='images/missingImage'>missingImage.png</file>\n"
+  "        <file alias='images/panIcon'>panIcon.png</file>\n"
+  "        <file alias='images/textAreaResizeCorner@2x'>textAreaResizeCorner@2x.png</file>\n"
+  "        <file alias='images/textAreaResizeCorner'>textAreaResizeCorner.png</file>\n"
+)
+
+if (ENABLE_WEB_AUDIO)
+    list(APPEND WebKitResources
+        "        <file alias=\"audio/Composite\">Composite.wav</file>\n"
+    )
+endif ()
+
+# WebCore looks its images and audio up under WPE's resource path.
+file(WRITE ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+    "<?xml version=1.0 encoding=UTF-8?>\n"
+    "<gresources>\n"
+    "    <gresource prefix=\"/org/webkitwpe/resources\">\n"
+    ${WebKitResources}
+    "    </gresource>\n"
+    "</gresources>\n"
+)
+
+GLIB_COMPILE_RESOURCES(
+    OUTPUT        ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.c
+    SOURCE_XML    ${WebKit_DERIVED_SOURCES_DIR}/WebKitResourcesGResourceBundle.xml
+    RESOURCE_DIRS ${CMAKE_SOURCE_DIR}/Source/WebCore/Resources
+                  ${CMAKE_SOURCE_DIR}/Source/WebCore/platform/audio/resources
 )
 
 list(APPEND WebKit_SERIALIZATION_IN_FILES
