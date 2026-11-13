@@ -629,7 +629,7 @@ void WebProcessProxy::getLaunchOptions(ProcessLauncher::LaunchOptions& launchOpt
         launchOptions.extraInitializationData.add<HashTranslatorASCIILiteral>("enable-enhanced-security"_s, "1"_s);
 }
 
-#if !PLATFORM(GTK) && !PLATFORM(WPE)
+#if !PLATFORM(CUTEFISH) && !PLATFORM(GTK) && !PLATFORM(WPE)
 void WebProcessProxy::platformGetLaunchOptions(ProcessLauncher::LaunchOptions& launchOptions)
 {
     AuxiliaryProcessProxy::platformGetLaunchOptions(launchOptions);

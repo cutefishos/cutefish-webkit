@@ -34,7 +34,10 @@ UIProcess/API/C/glib/WKContextConfigurationGlib.cpp
 
 UIProcess/CoordinatedGraphics/DrawingAreaProxyCoordinatedGraphics.cpp
 
-UIProcess/Launcher/cutefish/ProcessLauncherCutefish.cpp
+UIProcess/Launcher/glib/BubblewrapLauncher.cpp
+UIProcess/Launcher/glib/FlatpakLauncher.cpp
+UIProcess/Launcher/glib/ProcessLauncherGLib.cpp
+UIProcess/Launcher/glib/XDGDBusProxy.cpp
 
 UIProcess/cutefish/WebPageProxyCutefish.cpp
 UIProcess/cutefish/WebProcessPoolCutefish.cpp

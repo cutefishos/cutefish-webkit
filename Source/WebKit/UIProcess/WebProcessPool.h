@@ -505,7 +505,9 @@ public:
     void setSandboxEnabled(bool);
     void addSandboxPath(const CString& path, SandboxPermission permission) { m_extraSandboxPaths.add(path, permission); };
     const HashMap<CString, SandboxPermission>& sandboxPaths() const LIFETIME_BOUND { return m_extraSandboxPaths; };
+#if PLATFORM(GTK) || PLATFORM(WPE)
     void setSandboxEnabledForTesting(bool);
+#endif
     bool sandboxEnabled() const { return m_sandboxEnabled; };
 
 #if PLATFORM(GTK) || PLATFORM(WPE)
@@ -642,7 +644,7 @@ private:
     void platformInitializeWebProcess(const WebProcessProxy&, WebProcessCreationParameters&);
     void platformInvalidateContext();
 
-#if PLATFORM(CUTEFISH) || PLATFORM(GTK) || PLATFORM(WPE)
+#if PLATFORM(GTK) || PLATFORM(WPE)
     void setSandboxEnabledInternal(bool, bool ignoreEnvironmentForTesting);
 #endif
 

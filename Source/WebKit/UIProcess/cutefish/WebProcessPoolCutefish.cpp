@@ -42,6 +42,10 @@ namespace WebKit {
 
 void WebProcessPool::platformInitialize(NeedsGlobalStaticInitialization)
 {
+#if ENABLE(BUBBLEWRAP_SANDBOX)
+    m_sandboxEnabled = true;
+#endif
+
 #if OS(LINUX)
     if (!MemoryPressureMonitor::disabled())
         installMemoryPressureHandler();
@@ -80,6 +84,11 @@ void WebProcessPool::platformInvalidateContext()
 
 void WebProcessPool::platformResolvePathsForSandboxExtensions()
 {
+}
+
+void WebProcessPool::setSandboxEnabled(bool enabled)
+{
+    m_sandboxEnabled = enabled;
 }
 
 } // namespace WebKit

@@ -27,9 +27,19 @@
 #include "config.h"
 #include "WebProcessProxy.h"
 
+#include "WebProcessPool.h"
 #include <WebCore/NotImplemented.h>
 
 namespace WebKit {
+
+void WebProcessProxy::platformGetLaunchOptions(ProcessLauncher::LaunchOptions& launchOptions)
+{
+    launchOptions.extraInitializationData.set("enable-sandbox"_s, m_processPool->sandboxEnabled() ? "true"_s : "false"_s);
+    if (!m_processPool->sandboxEnabled())
+        return;
+
+    launchOptions.extraSandboxPaths = m_processPool->sandboxPaths();
+}
 
 void WebProcessProxy::platformSuspendProcess()
 {

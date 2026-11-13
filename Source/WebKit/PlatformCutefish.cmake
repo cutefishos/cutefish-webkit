@@ -39,6 +39,7 @@ list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
 list(APPEND WebKit_SOURCES
     Shared/cutefish/NativeWebEventsCutefish.cpp
 
+    UIProcess/API/C/cutefish/WKContextSandbox.cpp
     UIProcess/API/C/cutefish/WKDisplaySync.cpp
     UIProcess/API/C/cutefish/WKDownloadDelegate.cpp
     UIProcess/API/C/cutefish/WKMainRunLoop.cpp
@@ -142,7 +143,7 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKIT_DIR}/UIProcess/API/C/glib"
     "${WEBKIT_DIR}/UIProcess/API/C/playstation"
     "${WEBKIT_DIR}/UIProcess/CoordinatedGraphics"
-    "${WEBKIT_DIR}/UIProcess/Launcher/cutefish"
+    "${WEBKIT_DIR}/UIProcess/Launcher/glib"
     "${WEBKIT_DIR}/UIProcess/cutefish"
     "${WEBKIT_DIR}/UIProcess/glib"
     "${WEBKIT_DIR}/UIProcess/linux"
@@ -155,6 +156,7 @@ list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
     Shared/API/c/cutefish/WKBaseCutefish.h
     Shared/API/c/cutefish/WKEventCutefish.h
 
+    UIProcess/API/C/cutefish/WKContextSandbox.h
     UIProcess/API/C/cutefish/WKDisplaySync.h
     UIProcess/API/C/cutefish/WKDownloadDelegate.h
     UIProcess/API/C/cutefish/WKMainRunLoop.h
@@ -174,6 +176,10 @@ list(APPEND WebKit_LIBRARIES
 
 if (USE_GBM)
     list(APPEND WebKit_LIBRARIES GBM::GBM)
+endif ()
+
+if (ENABLE_BUBBLEWRAP_SANDBOX)
+    list(APPEND WebKit_LIBRARIES Libseccomp::Libseccomp)
 endif ()
 
 if (USE_GSTREAMER)

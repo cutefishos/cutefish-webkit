@@ -125,6 +125,8 @@ const CString& sandboxedUserRuntimeDirectory()
         static constexpr ASCIILiteral baseDirectory = "webkitgtk"_s;
 #elif PLATFORM(WPE)
         static constexpr ASCIILiteral baseDirectory = "wpe"_s;
+#elif PLATFORM(CUTEFISH)
+        static constexpr ASCIILiteral baseDirectory = "cutefish-webkit"_s;
 #else
         static constexpr ASCIILiteral baseDirectory = "javascriptcore"_s;
 #endif
