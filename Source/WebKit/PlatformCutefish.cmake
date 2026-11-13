@@ -176,6 +176,18 @@ if (USE_GBM)
     list(APPEND WebKit_LIBRARIES GBM::GBM)
 endif ()
 
+if (USE_GSTREAMER)
+    list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES
+        ${GSTREAMER_INCLUDE_DIRS}
+        ${GSTREAMER_AUDIO_INCLUDE_DIRS}
+        ${GSTREAMER_PBUTILS_INCLUDE_DIRS}
+        ${GSTREAMER_VIDEO_INCLUDE_DIRS}
+    )
+    list(APPEND WebKit_LIBRARIES
+        ${GSTREAMER_LIBRARIES}
+    )
+endif ()
+
 configure_file(cutefish-webkit.pc.in ${CMAKE_BINARY_DIR}/cutefish-webkit.pc @ONLY)
 install(FILES "${CMAKE_BINARY_DIR}/cutefish-webkit.pc"
     DESTINATION "${LIB_INSTALL_DIR}/pkgconfig"

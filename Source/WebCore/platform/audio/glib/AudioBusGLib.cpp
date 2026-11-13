@@ -30,7 +30,7 @@
 
 #if PLATFORM(GTK)
 #define AUDIO_GRESOURCE_PATH "/org/webkitgtk/resources/audio"
-#elif PLATFORM(WPE)
+#elif PLATFORM(WPE) || PLATFORM(CUTEFISH)
 #define AUDIO_GRESOURCE_PATH "/org/webkitwpe/resources/audio"
 #endif
 

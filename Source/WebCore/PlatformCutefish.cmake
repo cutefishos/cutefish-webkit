@@ -1,5 +1,6 @@
 include(platform/Adwaita.cmake)
 include(platform/Curl.cmake)
+include(platform/GStreamer.cmake)
 include(platform/ImageDecoders.cmake)
 include(platform/OpenSSL.cmake)
 include(platform/Skia.cmake)
@@ -19,6 +20,7 @@ list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/platform/graphics/opengl"
     "${WEBCORE_DIR}/platform/graphics/opentype"
     "${WEBCORE_DIR}/platform/mediacapabilities"
+    "${WEBCORE_DIR}/platform/mediastream/gstreamer"
     "${WEBCORE_DIR}/platform/text/icu"
     "${WEBCORE_DIR}/platform/video-codecs"
     "${WEBCORE_DIR}/platform/wpe"

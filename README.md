@@ -5,10 +5,12 @@ The web engine of the Cutefish desktop: a WebKit port based on WPE WebKit
 upstream WebKit on GLib's event loop, as in GTK and WPE; the port adds the
 curl network backend, Skia rendering into DMA-BUF buffers and a C API that
 hands those frames to the embedding application. PDF documents open in
-WebKit's bundled PDF.js viewer.
+WebKit's bundled PDF.js viewer. Video, audio, Media Source Extensions, Web
+Audio and WebCodecs run on GStreamer, with hardware decoding where a VA-API
+decoder is installed.
 
-Media, WebGL, WebRTC, accessibility, the sandbox and the inspector are not
-built yet.
+WebGL, WebRTC, encrypted media, accessibility, the sandbox and the inspector
+are not built yet.
 
 ## Dependencies
 
@@ -19,8 +21,13 @@ sudo apt install cmake ninja-build gperf perl python3 ruby unifdef pkg-config li
     libcurl4-openssl-dev libssl-dev libpsl-dev libicu-dev libxml2-dev libxslt1-dev libsqlite3-dev \
     libegl-dev libgles-dev libepoxy-dev libgbm-dev libdrm-dev libxkbcommon-dev \
     libfontconfig-dev libfreetype-dev libharfbuzz-dev liblcms2-dev zlib1g-dev \
-    libjpeg-dev libpng-dev libwebp-dev libavif-dev libjxl-dev libwoff-dev
+    libjpeg-dev libpng-dev libwebp-dev libavif-dev libjxl-dev libwoff-dev \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 ```
+
+At run time media needs GStreamer's base and good plugin sets; the bad set,
+gst-libav and the GL plugin add codecs, VA-API decoding and video frames that
+stay on the GPU.
 
 ## Build
 

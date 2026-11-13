@@ -8,6 +8,10 @@
 #include "WebProcess.h"
 #include <skia/core/SkGraphics.h>
 
+#if USE(GSTREAMER)
+#include <WebCore/GStreamerCommon.h>
+#endif
+
 #if USE(SKIA_OPENTYPE_SVG)
 WTF_IGNORE_WARNINGS_IN_THIRD_PARTY_CODE_BEGIN
 #include <skia/modules/svg/SkSVGOpenTypeSVGDecoder.h>
@@ -25,6 +29,13 @@ public:
         SkGraphics::SetOpenTypeSVGDecoderFactory(SkSVGOpenTypeSVGDecoder::Make);
 #endif
         return true;
+    }
+
+    void platformFinalize() override
+    {
+#if USE(GSTREAMER)
+        WebCore::deinitializeGStreamer();
+#endif
     }
 };
 
