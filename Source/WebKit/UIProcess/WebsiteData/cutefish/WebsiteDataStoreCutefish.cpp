@@ -19,7 +19,7 @@ static String programName()
     return "cutefish-webkit"_s;
 }
 
-static const String& defaultBaseCacheDirectory()
+const String& WebsiteDataStore::defaultBaseCacheDirectory()
 {
     static NeverDestroyed<String> baseCacheDirectory;
     static std::once_flag once;
@@ -29,7 +29,7 @@ static const String& defaultBaseCacheDirectory()
     return baseCacheDirectory;
 }
 
-static const String& defaultBaseDataDirectory()
+const String& WebsiteDataStore::defaultBaseDataDirectory()
 {
     static NeverDestroyed<String> baseDataDirectory;
     static std::once_flag once;

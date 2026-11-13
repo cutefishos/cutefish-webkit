@@ -37,10 +37,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#if PLATFORM(CUTEFISH)
-#include <sys/eventfd.h>
-#include <wtf/threads/BinarySemaphore.h>
-#endif
 #include <wtf/Assertions.h>
 #include <wtf/Borrow.h>
 #include <wtf/MallocSpan.h>
@@ -122,16 +118,6 @@ void Connection::platformInvalidate()
     if (m_socketMonitor) {
         m_socketMonitor->detach();
         m_socketMonitor = nullptr;
-    }
-#endif
-
-#if PLATFORM(CUTEFISH)
-    if (m_socketMonitor) {
-        uint64_t value = 1;
-        while (write(m_socketMonitorWakeup.value(), &value, sizeof(value)) == -1 && errno == EINTR) { }
-        m_socketMonitor->detach();
-        m_socketMonitor = nullptr;
-        m_socketMonitorWakeup = { };
     }
 #endif
 
@@ -368,42 +354,6 @@ void Connection::platformOpen()
         }
     });
     return;
-#endif
-
-#if PLATFORM(CUTEFISH)
-    // The monitor polls its own copies of the socket and of the wakeup
-    // descriptor, so platformInvalidate() can close the socket while it waits.
-    m_socketMonitorWakeup = UnixFileDescriptor { eventfd(0, EFD_CLOEXEC), UnixFileDescriptor::Adopt };
-    UnixFileDescriptor socket { m_socketDescriptor.value(), UnixFileDescriptor::Duplicate };
-    UnixFileDescriptor wakeup { m_socketMonitorWakeup.value(), UnixFileDescriptor::Duplicate };
-    m_socketMonitor = Thread::create("IPC socket monitor"_s, [protectedThis, socket = WTF::move(socket), wakeup = WTF::move(wakeup)] {
-        std::array<pollfd, 2> descriptors { {
-            { socket.value(), POLLIN, 0 },
-            { wakeup.value(), POLLIN, 0 },
-        } };
-        while (true) {
-            if (poll(descriptors.data(), descriptors.size(), -1) == -1) {
-                if (errno == EINTR)
-                    continue;
-                break;
-            }
-            if (descriptors[1].revents)
-                break;
-            if (!descriptors[0].revents)
-                continue;
-
-            // Wait for the handler to drain the socket before polling again.
-            BinarySemaphore handled;
-            protectedThis->m_connectionQueue->dispatch([protectedThis, &handled] {
-                protectedThis->readyReadHandler();
-                handled.signal();
-            });
-            handled.wait();
-
-            if (descriptors[0].revents & (POLLHUP | POLLERR | POLLNVAL))
-                break;
-        }
-    });
 #endif
 
     // Schedule a call to readyReadHandler. Data may have arrived before installation of the signal handler.

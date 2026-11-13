@@ -32,7 +32,7 @@
 #include <wtf/RunLoop.h>
 #include <wtf/TZoneMalloc.h>
 
-#if USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#if USE(GLIB_EVENT_LOOP)
 #include <wtf/Lock.h>
 #include <wtf/glib/ActivityObserver.h>
 #endif
@@ -40,7 +40,7 @@
 #if USE(CF)
 using PlatformRunLoopObserver = struct __CFRunLoopObserver*;
 using PlatformRunLoop = struct __CFRunLoop*;
-#elif USE(GLIB) || USE(GENERIC_EVENT_LOOP)
+#elif USE(GLIB)
 using PlatformRunLoopObserver = ActivityObserver;
 using PlatformRunLoop = RefPtr<RunLoop>;
 #else
@@ -73,7 +73,7 @@ public:
     RunLoopObserver(WellKnownOrder order, RunLoopObserverCallback&& callback, Type type = Type::Repeating)
         : m_callback(WTF::move(callback))
         , m_type(type)
-#if USE(CF) || USE(GLIB) || USE(GENERIC_EVENT_LOOP)
+#if USE(CF) || USE(GLIB)
         , m_order(order)
     { }
 #else
@@ -103,7 +103,7 @@ private:
 #if USE(CF)
     WellKnownOrder m_order { WellKnownOrder::GraphicsCommit };
     RetainPtr<PlatformRunLoopObserver> m_runLoopObserver;
-#elif USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#elif USE(GLIB_EVENT_LOOP)
     WellKnownOrder m_order { WellKnownOrder::GraphicsCommit };
     mutable Lock m_runLoopObserverLock;
     RefPtr<ActivityObserver> m_runLoopObserver WTF_GUARDED_BY_LOCK(m_runLoopObserverLock);

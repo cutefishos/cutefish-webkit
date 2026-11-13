@@ -1,10 +1,19 @@
 list(APPEND WTF_SOURCES
-    cutefish/ChassisTypeCutefish.cpp
-    cutefish/FileSystemCutefish.cpp
-
     generic/MainThreadGeneric.cpp
-    generic/RunLoopGeneric.cpp
     generic/WorkQueueGeneric.cpp
+
+    glib/Application.cpp
+    glib/ChassisType.cpp
+    glib/FilePathWatcher.cpp
+    glib/FileSystemGlib.cpp
+    glib/GMallocString.cpp
+    glib/GRefPtr.cpp
+    glib/GSocketMonitor.cpp
+    glib/GSpanExtras.cpp
+    glib/RunLoopGLib.cpp
+    glib/Sandbox.cpp
+    glib/SocketConnection.cpp
+    glib/TimeZoneGLib.cpp
 
     linux/CurrentProcessMemoryStatus.cpp
     linux/HighPriorityThreads.cpp
@@ -29,7 +38,22 @@ list(APPEND WTF_PUBLIC_HEADERS
     PlatformEnableCutefish.h
 
     glib/ActivityObserver.h
+    glib/Application.h
     glib/ChassisType.h
+    glib/FilePathWatcher.h
+    glib/GMallocString.h
+    glib/GRefPtr.h
+    glib/GSocketMonitor.h
+    glib/GSpanExtras.h
+    glib/GThreadSafeWeakPtr.h
+    glib/GTypedefs.h
+    glib/GUniquePtr.h
+    glib/GWeakPtr.h
+    glib/RunLoopSourcePriority.h
+    glib/Sandbox.h
+    glib/SocketConnection.h
+    glib/SysprofAnnotator.h
+    glib/WTFGType.h
 
     linux/CurrentProcessMemoryStatus.h
     linux/HighPriorityThreads.h
@@ -41,5 +65,6 @@ list(APPEND WTF_PUBLIC_HEADERS
 )
 
 list(APPEND WTF_LIBRARIES
+    GLib::Gio
     Threads::Threads
 )

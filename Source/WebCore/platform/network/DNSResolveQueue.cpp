@@ -27,7 +27,7 @@
 #include "config.h"
 #include "DNSResolveQueue.h"
 
-#if USE(GLIB)
+#if USE(GLIB) && !USE(CURL)
 #include "DNSResolveQueueGLib.h"
 #elif USE(CURL)
 #include "DNSResolveQueueCurl.h"

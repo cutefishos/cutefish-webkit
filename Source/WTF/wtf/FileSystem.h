@@ -167,17 +167,17 @@ WTF_EXPORT_PRIVATE bool filesHaveSameVolume(const String&, const String&);
 WTF_EXPORT_PRIVATE RetainPtr<CFURLRef> pathAsURL(const String&);
 #endif
 
-#if USE(GLIB) || PLATFORM(CUTEFISH)
+#if USE(GLIB)
 WTF_EXPORT_PRIVATE String filenameForDisplay(const String&);
 WTF_EXPORT_PRIVATE CString currentExecutablePath();
 WTF_EXPORT_PRIVATE CString currentExecutableName();
 WTF_EXPORT_PRIVATE String userCacheDirectory();
 WTF_EXPORT_PRIVATE String userDataDirectory();
 WTF_EXPORT_PRIVATE String createTemporaryDirectory(const String& directoryPrefix = nullString());
-#if ENABLE(DEVELOPER_MODE) && USE(GLIB)
+#if ENABLE(DEVELOPER_MODE)
 WTF_EXPORT_PRIVATE CString webkitTopLevelDirectory();
 #endif
-#endif // USE(GLIB) || PLATFORM(CUTEFISH)
+#endif // USE(GLIB)
 
 #if OS(WINDOWS)
 WTF_EXPORT_PRIVATE String localUserSpecificStorageDirectory();

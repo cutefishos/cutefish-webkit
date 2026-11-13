@@ -14,14 +14,17 @@ page/glib/DragControllerGLib.cpp
 page/linux/ResourceUsageOverlayLinux.cpp
 page/linux/ResourceUsageThreadLinux.cpp
 
-platform/generic/KeyedDecoderGeneric.cpp
-platform/generic/KeyedEncoderGeneric.cpp
 platform/generic/ScrollbarsControllerGeneric.cpp
 
 platform/glib/DragDataGLib.cpp
+platform/glib/FileMonitorGLib.cpp
+platform/glib/KeyedDecoderGlib.cpp
+platform/glib/KeyedEncoderGlib.cpp
+platform/glib/LowPowerModeNotifierGLib.cpp
 platform/glib/PasteboardGLib.cpp
 platform/glib/RunLoopObserverGLib.cpp
 platform/glib/SelectionData.cpp
+platform/glib/SharedBufferGlib.cpp
 platform/glib/SystemSettings.cpp
 platform/glib/UserAgentGLib.cpp
 platform/glib/UserAgentQuirks.cpp
@@ -44,6 +47,7 @@ platform/graphics/gbm/MemoryMappedGPUBuffer.cpp
 platform/graphics/gbm/PlatformDisplayGBM.cpp @no-unify
 platform/graphics/gbm/VivanteSuperTiledTexture.cpp
 
+platform/graphics/glib/IconGLib.cpp
 platform/graphics/glib/SystemFontDatabaseGLib.cpp
 
 platform/graphics/opentype/OpenTypeVerticalData.cpp
@@ -54,7 +58,8 @@ platform/text/LocaleICU.cpp
 platform/cutefish/PlatformKeyboardEventCutefish.cpp
 
 platform/network/cutefish/CurlSSLHandleCutefish.cpp
-platform/network/cutefish/NetworkStateNotifierCutefish.cpp
+
+platform/network/glib/NetworkStateNotifierGLib.cpp
 
 platform/unix/LoggingUnix.cpp
 platform/unix/SharedMemoryUnix.cpp

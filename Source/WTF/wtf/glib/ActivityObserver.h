@@ -19,7 +19,7 @@
 
 #pragma once
 
-#if USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#if USE(GLIB_EVENT_LOOP)
 
 #include <wtf/Lock.h>
 #include <wtf/RunLoop.h>
@@ -111,4 +111,4 @@ private:
 
 using WTF::ActivityObserver;
 
-#endif // USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#endif // USE(GLIB_EVENT_LOOP)

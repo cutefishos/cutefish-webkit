@@ -27,12 +27,10 @@
 #include "config.h"
 #include <wtf/RunLoop.h>
 
-#include <wtf/BubbleSort.h>
 #include <wtf/DataLog.h>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/ProcessID.h>
 #include <wtf/TZoneMallocInlines.h>
-#include <wtf/glib/ActivityObserver.h>
 
 namespace WTF {
 
@@ -211,19 +209,10 @@ void RunLoop::runImpl(RunMode runMode)
         m_mainLoops.append(&statusOfThisLoop);
     }
 
-    if (runMode == RunMode::Drain)
-        notifyActivity(Activity::Entry);
-
     Deque<Ref<TimerBase::ScheduledTask>> firedTimers;
     while (true) {
-        notifyActivity(Activity::BeforeWaiting);
-        bool shouldContinue = populateTasks(runMode, statusOfThisLoop, firedTimers);
-        if (!shouldContinue) {
-            if (runMode == RunMode::Drain)
-                notifyActivity(Activity::Exit);
+        if (!populateTasks(runMode, statusOfThisLoop, firedTimers))
             return;
-        }
-        notifyActivity(Activity::AfterWaiting);
 
         // Dispatch scheduled timers.
         while (!firedTimers.isEmpty()) {
@@ -251,16 +240,6 @@ void RunLoop::run()
 void RunLoop::setWakeUpCallback(WTF::Function<void()>&& function)
 {
     RunLoop::currentSingleton().m_wakeUpCallback = WTF::move(function);
-}
-
-std::optional<MonotonicTime> RunLoop::nextWakeUpTime()
-{
-    Locker locker { m_loopLock };
-    if (m_pendingTasks)
-        return MonotonicTime::now();
-    if (m_schedules.isEmpty())
-        return std::nullopt;
-    return m_schedules.first()->scheduledTimePoint();
 }
 
 // RunLoop operations are thread-safe. These operations can be called from outside of the RunLoop's thread.
@@ -293,52 +272,6 @@ void RunLoop::wakeUp()
 {
     Locker locker { m_loopLock };
     wakeUpWithLock();
-}
-
-void RunLoop::observeActivity(const Ref<ActivityObserver>& observer)
-{
-    {
-        Locker locker { m_activityObserversLock };
-        ASSERT(!m_activityObservers.contains(observer));
-        m_activityObservers.append(observer);
-        m_activities.add(observer->activities());
-
-        if (m_activityObservers.size() > 1) {
-            // The input is always sorted already. See BubbleSort.h.
-            WTF::bubbleSort(m_activityObservers.mutableSpan(), [](const auto& a, const auto& b) {
-                return a->order() < b->order();
-            });
-        }
-    }
-
-    wakeUp();
-}
-
-void RunLoop::unobserveActivity(const Ref<ActivityObserver>& observer)
-{
-    Locker locker { m_activityObserversLock };
-    ASSERT(m_activityObservers.contains(observer));
-    m_activityObservers.removeFirst(observer);
-    m_activities.remove(observer->activities());
-}
-
-void RunLoop::notifyActivity(Activity activity)
-{
-    ActivityObservers observersToBeNotified;
-    {
-        Locker locker { m_activityObserversLock };
-        if (m_activityObservers.isEmpty() || !m_activities.contains(activity))
-            return;
-
-        for (auto& observer : m_activityObservers) {
-            if (observer->activities().contains(activity))
-                observersToBeNotified.append(observer);
-        }
-    }
-
-    // Observers may add or remove observers, so they run without the lock.
-    for (auto& observer : observersToBeNotified)
-        observer->notify();
 }
 
 RunLoop::CycleResult RunLoop::cycle(RunLoopMode)

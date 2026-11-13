@@ -29,10 +29,7 @@
 #include "Logging.h"
 #include <wtf/Threading.h>
 #include <wtf/Vector.h>
-
-#if USE(GLIB_EVENT_LOOP)
 #include <wtf/glib/RunLoopSourcePriority.h>
-#endif
 
 namespace WebKit {
 
@@ -40,9 +37,7 @@ DisplayVBlankMonitorThreaded::DisplayVBlankMonitorThreaded(unsigned refreshRate)
     : DisplayVBlankMonitor(refreshRate)
     , m_destroyThreadTimer(RunLoop::mainSingleton(), "DisplayVBlankMonitorThreaded::DestroyThreadTimer"_s, this, &DisplayVBlankMonitorThreaded::destroyThreadTimerFired)
 {
-#if USE(GLIB_EVENT_LOOP)
     m_destroyThreadTimer.setPriority(RunLoopSourcePriority::ReleaseUnusedResourcesTimer);
-#endif
 }
 
 DisplayVBlankMonitorThreaded::~DisplayVBlankMonitorThreaded()

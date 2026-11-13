@@ -3,6 +3,12 @@ include(Headers.cmake)
 include(Platform/Curl.cmake)
 include(Platform/Skia.cmake)
 
+# The network cache keeps its data in GLib buffers instead of the curl backend's.
+list(REMOVE_ITEM WebKit_SOURCES
+    NetworkProcess/cache/NetworkCacheDataCurl.cpp
+    NetworkProcess/cache/NetworkCacheIOChannelCurl.cpp
+)
+
 set(WebKit_OUTPUT_NAME cutefish-webkit)
 set(WebProcess_OUTPUT_NAME CutefishWebProcess)
 set(NetworkProcess_OUTPUT_NAME CutefishNetworkProcess)
@@ -44,8 +50,6 @@ list(APPEND WebKit_SOURCES
     UIProcess/cutefish/PageClientImpl.cpp
 
     UIProcess/WebsiteData/cutefish/WebsiteDataStoreCutefish.cpp
-
-    WebProcess/InjectedBundle/cutefish/InjectedBundleCutefish.cpp
 )
 
 list(APPEND WebKit_SERIALIZATION_IN_FILES
@@ -109,6 +113,8 @@ list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
 )
 
 list(APPEND WebKit_LIBRARIES
+    GLib::GioUnix
+    GLib::Module
     XkbCommon::XkbCommon
 )
 

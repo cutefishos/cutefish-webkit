@@ -203,7 +203,7 @@ bool isValidHTTPToken(const String& value)
     return isValidHTTPToken(StringView(value));
 }
 
-#if USE(GLIB) || PLATFORM(CUTEFISH)
+#if USE(GLIB)
 // True if the character at the given position satisifies a predicate, incrementing "pos" by one.
 // Note: Might return pos == str.length()
 static inline bool skipCharacter(const String& value, unsigned& pos, Function<bool(const char16_t)>&& predicate)

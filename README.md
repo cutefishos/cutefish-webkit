@@ -2,9 +2,9 @@
 
 The web engine of the Cutefish desktop: a WebKit port based on WPE WebKit
 2.54.2. WebCore, JavaScriptCore and the multi-process WebKit model are
-upstream WebKit; the port adds a generic run loop, the curl network backend,
-Skia rendering into DMA-BUF buffers and a C API that hands those frames to the
-embedding application.
+upstream WebKit on GLib's event loop, as in GTK and WPE; the port adds the
+curl network backend, Skia rendering into DMA-BUF buffers and a C API that
+hands those frames to the embedding application.
 
 Media, WebGL, WebRTC, accessibility, the sandbox and the inspector are not
 built yet.
@@ -14,7 +14,7 @@ built yet.
 ### Debian/Ubuntu
 
 ```shell
-sudo apt install cmake ninja-build gperf perl python3 ruby unifdef pkg-config \
+sudo apt install cmake ninja-build gperf perl python3 ruby unifdef pkg-config libglib2.0-dev \
     libcurl4-openssl-dev libssl-dev libpsl-dev libicu-dev libxml2-dev libxslt1-dev libsqlite3-dev \
     libegl-dev libgles-dev libepoxy-dev libgbm-dev libdrm-dev libxkbcommon-dev \
     libfontconfig-dev libfreetype-dev libharfbuzz-dev liblcms2-dev zlib1g-dev \

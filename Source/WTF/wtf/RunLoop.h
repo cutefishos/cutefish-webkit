@@ -55,7 +55,6 @@
 #endif
 
 #if USE(GENERIC_EVENT_LOOP)
-#include <wtf/OptionCountedSet.h>
 #include <wtf/RedBlackTree.h>
 #endif
 
@@ -63,7 +62,7 @@ namespace WTF {
 
 template<typename, CanBeGCThread> class ThreadSpecific;
 
-#if USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#if USE(GLIB_EVENT_LOOP)
 class ActivityObserver;
 #endif
 
@@ -145,11 +144,6 @@ public:
 
 #if USE(GENERIC_EVENT_LOOP) || USE(WINDOWS_EVENT_LOOP)
     WTF_EXPORT_PRIVATE static void setWakeUpCallback(WTF::Function<void()>&&);
-#endif
-
-#if USE(GENERIC_EVENT_LOOP)
-    // The time the next timer is due, or now when work is already pending.
-    WTF_EXPORT_PRIVATE std::optional<MonotonicTime> nextWakeUpTime();
 #endif
 
 #if USE(WINDOWS_EVENT_LOOP)
@@ -399,17 +393,6 @@ private:
     bool populateTasks(RunMode, Status&, Deque<Ref<TimerBase::ScheduledTask>>&);
 
     friend class TimerBase;
-
-    void notifyActivity(Activity);
-
-    friend class ActivityObserver;
-    WTF_EXPORT_PRIVATE void observeActivity(const Ref<ActivityObserver>&);
-    WTF_EXPORT_PRIVATE void unobserveActivity(const Ref<ActivityObserver>&);
-
-    using ActivityObservers = Vector<Ref<ActivityObserver>, 4>;
-    Lock m_activityObserversLock;
-    ActivityObservers m_activityObservers WTF_GUARDED_BY_LOCK(m_activityObserversLock);
-    OptionCountedSet<Activity> m_activities WTF_GUARDED_BY_LOCK(m_activityObserversLock);
 
     Lock m_loopLock;
     Condition m_readyToRun;

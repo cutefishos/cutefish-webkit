@@ -84,7 +84,7 @@ bool NODELETE isValidReasonPhrase(const String&);
 bool NODELETE isValidHTTPHeaderValue(const String&);
 bool NODELETE isValidAcceptHeaderValue(const String&);
 bool NODELETE isValidLanguageHeaderValue(const String&);
-#if USE(GLIB) || PLATFORM(CUTEFISH)
+#if USE(GLIB)
 WEBCORE_EXPORT bool isValidUserAgentHeaderValue(const String&);
 #endif
 bool NODELETE isValidHTTPToken(const String&);

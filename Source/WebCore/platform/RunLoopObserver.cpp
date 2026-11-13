@@ -40,7 +40,7 @@ void RunLoopObserver::runLoopObserverFired()
 {
 #if USE(CF)
     ASSERT(m_runLoopObserver);
-#elif USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#elif USE(GLIB_EVENT_LOOP)
     if (ASSERT_ENABLED) {
         Locker locker { m_runLoopObserverLock };
         ASSERT(m_runLoopObserver);
@@ -49,7 +49,7 @@ void RunLoopObserver::runLoopObserverFired()
     m_callback();
 }
 
-#if !USE(CF) && !USE(GLIB_EVENT_LOOP) && !USE(GENERIC_EVENT_LOOP)
+#if !USE(CF) && !USE(GLIB_EVENT_LOOP)
 
 void RunLoopObserver::schedule(PlatformRunLoop, OptionSet<Activity>)
 {
@@ -64,6 +64,6 @@ bool RunLoopObserver::isScheduled() const
     return false;
 }
 
-#endif // !USE(CF) && !USE(GLIB_EVENT_LOOP) && !USE(GENERIC_EVENT_LOOP)
+#endif // !USE(CF) && !USE(GLIB_EVENT_LOOP)
 
 } // namespace WebCore

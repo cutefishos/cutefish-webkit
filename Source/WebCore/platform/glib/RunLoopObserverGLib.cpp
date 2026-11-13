@@ -26,7 +26,7 @@
 #include "config.h"
 #include "RunLoopObserver.h"
 
-#if USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#if USE(GLIB_EVENT_LOOP)
 namespace WebCore {
 
 void RunLoopObserver::schedule(PlatformRunLoop runLoop, OptionSet<Activity> activities)
@@ -62,4 +62,4 @@ bool RunLoopObserver::isScheduled() const
 
 } // namespace WebCore
 
-#endif // USE(GLIB_EVENT_LOOP) || USE(GENERIC_EVENT_LOOP)
+#endif // USE(GLIB_EVENT_LOOP)

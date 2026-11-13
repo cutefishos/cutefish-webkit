@@ -41,4 +41,8 @@ void WebProcessProxy::platformResumeProcess()
     notImplemented();
 }
 
+void WebProcessProxy::systemBeep()
+{
+}
+
 } // namespace WebKit

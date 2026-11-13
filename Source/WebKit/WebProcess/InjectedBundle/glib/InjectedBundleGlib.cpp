@@ -29,6 +29,7 @@
 
 #include "WKBundleAPICast.h"
 #include "WKBundleInitialize.h"
+#include <gmodule.h>
 #include <wtf/FileSystem.h>
 #include <wtf/text/CString.h>
 

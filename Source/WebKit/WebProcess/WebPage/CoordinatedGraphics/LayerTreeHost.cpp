@@ -56,11 +56,8 @@
 #include <wtf/SetForScope.h>
 #include <wtf/SystemTracing.h>
 #include <wtf/TZoneMallocInlines.h>
-#include <wtf/text/StringToIntegerConversion.h>
-
-#if USE(GLIB_EVENT_LOOP)
 #include <wtf/glib/RunLoopSourcePriority.h>
-#endif
+#include <wtf/text/StringToIntegerConversion.h>
 
 namespace WebKit {
 using namespace WebCore;

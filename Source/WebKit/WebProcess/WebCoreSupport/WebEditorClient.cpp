@@ -418,7 +418,7 @@ WebCore::DOMPasteAccessResponse WebEditorClient::requestDOMPasteAccess(WebCore::
     return page ? page->requestDOMPasteAccess(pasteAccessCategory, frameID, originIdentifier) : WebCore::DOMPasteAccessResponse::DeniedForGesture;
 }
 
-#if !PLATFORM(COCOA) && !PLATFORM(CUTEFISH) && !USE(GLIB)
+#if !PLATFORM(COCOA) && !USE(GLIB)
 
 void WebEditorClient::handleKeyboardEvent(KeyboardEvent& event)
 {
@@ -432,7 +432,7 @@ void WebEditorClient::handleInputMethodKeydown(KeyboardEvent&)
     notImplemented();
 }
 
-#endif // !PLATFORM(COCOA) && !PLATFORM(CUTEFISH) && !USE(GLIB)
+#endif // !PLATFORM(COCOA) && !USE(GLIB)
 
 void WebEditorClient::textFieldDidBeginEditing(Element& element)
 {

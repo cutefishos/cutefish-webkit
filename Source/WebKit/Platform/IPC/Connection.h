@@ -798,10 +798,6 @@ private:
 #if PLATFORM(PLAYSTATION)
     RefPtr<WTF::Thread> m_socketMonitor;
 #endif
-#if PLATFORM(CUTEFISH)
-    RefPtr<WTF::Thread> m_socketMonitor;
-    UnixFileDescriptor m_socketMonitorWakeup;
-#endif
 #elif OS(DARWIN)
     // Called on the connection queue.
     void receiveSourceEventHandler();

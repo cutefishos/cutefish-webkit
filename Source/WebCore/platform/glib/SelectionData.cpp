@@ -20,44 +20,13 @@
 #include "SelectionData.h"
 
 #include <wtf/TZoneMallocInlines.h>
-#if USE(GLIB)
 #include <wtf/glib/GUniquePtr.h>
-#endif
 #include <wtf/text/CString.h>
 #include <wtf/text/MakeString.h>
 #include <wtf/text/StringBuilder.h>
 #include <wtf/unicode/CharacterNames.h>
 
 namespace WebCore {
-
-#if !USE(GLIB)
-static String escapeMarkupText(const String& text)
-{
-    StringBuilder builder;
-    for (auto character : StringView(text).codeUnits()) {
-        switch (character) {
-        case '&':
-            builder.append("&amp;"_s);
-            break;
-        case '<':
-            builder.append("&lt;"_s);
-            break;
-        case '>':
-            builder.append("&gt;"_s);
-            break;
-        case '\'':
-            builder.append("&#39;"_s);
-            break;
-        case '"':
-            builder.append("&quot;"_s);
-            break;
-        default:
-            builder.append(character);
-        }
-    }
-    return builder.toString();
-}
-#endif
 
 WTF_MAKE_TZONE_ALLOCATED_IMPL(SelectionData);
 
@@ -119,15 +88,10 @@ void SelectionData::setURIList(const String& uriListString)
                 setURL = true;
             }
 
-#if USE(GLIB)
             GUniqueOutPtr<GError> error;
             GUniquePtr<gchar> filename(g_filename_from_uri(line.utf8().data(), 0, &error.outPtr()));
             if (!error && filename)
                 m_filenames.append(String::fromUTF8(filename.get()));
-#else
-            if (url.protocolIsFile() && url.host().isEmpty())
-                m_filenames.append(url.fileSystemPath());
-#endif
         }
     }
 }
@@ -145,15 +109,10 @@ void SelectionData::setURL(const URL& url, const String& label)
         return;
 
     String actualLabel = label.isEmpty() ? url.string() : label;
-#if USE(GLIB)
     GUniquePtr<gchar> escaped(g_markup_escape_text(actualLabel.utf8().data(), -1));
-    String escapedLabel = String::fromUTF8(escaped.get());
-#else
-    String escapedLabel = escapeMarkupText(actualLabel);
-#endif
 
     setMarkup(makeString("<a href=\""_s, url.string(), "\">"_s,
-        escapedLabel, "</a>"_s));
+        String::fromUTF8(escaped.get()), "</a>"_s));
 }
 
 const String& SelectionData::urlLabel() const
