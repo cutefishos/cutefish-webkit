@@ -63,6 +63,7 @@ UIProcess/wpe/WebPreferencesWPE.cpp
 WebProcess/InjectedBundle/glib/InjectedBundleGlib.cpp
 
 WebProcess/WebCoreSupport/glib/WebEditorClientGLib.cpp
+WebProcess/WebCoreSupport/wpe/WebDragClientWPE.cpp
 WebProcess/WebCoreSupport/wpe/WebEditorClientWPE.cpp
 
 WebProcess/WebPage/CoordinatedGraphics/AcceleratedSurface.cpp

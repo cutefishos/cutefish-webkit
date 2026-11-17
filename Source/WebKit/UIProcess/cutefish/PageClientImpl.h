@@ -97,6 +97,10 @@ private:
     void selectionDidChange() override;
     RefPtr<ViewSnapshot> takeViewSnapshot(std::optional<WebCore::IntRect>&&) override;
 
+#if ENABLE(DRAG_SUPPORT)
+    void startDrag(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&& dragImage, WebCore::IntPoint&& dragImageHotspot) override;
+#endif
+
     void setCursor(const WebCore::Cursor&) override;
     void setCursorHiddenUntilMouseMoves(bool) override;
 

@@ -128,6 +128,13 @@ void PageClientImpl::selectionDidChange()
     m_view.selectionDidChange();
 }
 
+#if ENABLE(DRAG_SUPPORT)
+void PageClientImpl::startDrag(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&&)
+{
+    m_view.page().dragCancelled();
+}
+#endif
+
 void PageClientImpl::setInputMethodState(std::optional<InputMethodState>&& state)
 {
     m_view.setInputMethodEnabled(state.has_value());
