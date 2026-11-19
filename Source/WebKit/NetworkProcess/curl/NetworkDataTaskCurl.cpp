@@ -243,6 +243,18 @@ void NetworkDataTaskCurl::curlDidFailWithError(CurlRequest& request, ResourceErr
     }
 
     if (isDownload()) {
+#if PLATFORM(CUTEFISH)
+        // A download that wrote something keeps it, for the embedder to go
+        // on with; its resume data is the file's path.
+        if (!m_client && m_downloadDestinationFile) {
+            m_downloadDestinationFile = { };
+            auto path = m_pendingDownloadLocation.utf8();
+            auto* download = m_session->networkProcess().downloadManager().download(*m_pendingDownloadID);
+            RELEASE_ASSERT(download);
+            download->didFail(resourceError, byteCast<uint8_t>(path.span()));
+            return;
+        }
+#endif
         deleteDownloadFile();
         if (m_client)
             m_client->didCompleteWithError(resourceError);
