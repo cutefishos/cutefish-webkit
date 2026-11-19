@@ -30,12 +30,20 @@
 #include "WebPage.h"
 #include "WebProcess.h"
 #include <WebCore/BitmapTexture.h>
+#include <WebCore/ColorBlending.h>
+#include <WebCore/ContainerNodeInlines.h>
+#include <WebCore/Document.h>
 #include <WebCore/FontRenderOptions.h>
 #include <WebCore/GLContext.h>
 #include <WebCore/GLFence.h>
+#include <WebCore/HTMLElement.h>
+#include <WebCore/LocalFrame.h>
+#include <WebCore/LocalFrameView.h>
 #include <WebCore/Page.h>
 #include <WebCore/PlatformDisplay.h>
 #include <WebCore/Region.h>
+#include <WebCore/RenderElementStyleInlines.h>
+#include <WebCore/RenderTheme.h>
 #include <WebCore/Settings.h>
 #include <WebCore/ShareableBitmap.h>
 #include <array>
@@ -986,16 +994,50 @@ void AcceleratedSurface::visibilityDidChange(bool isVisible)
     });
 }
 
+#if PLATFORM(CUTEFISH)
+// What the page's root paints: its background, or the body's it takes, over
+// the canvas colour of the page's colour scheme.
+static Color rootBackgroundColor(WebPage& webPage)
+{
+    RefPtr view = webPage.localMainFrameView();
+    RefPtr document = view ? view->frame().document() : nullptr;
+    RefPtr root = document ? document->documentElement() : nullptr;
+    CheckedPtr rootRenderer = root ? root->renderer() : nullptr;
+    if (!rootRenderer)
+        return { };
+    auto background = rootRenderer->style().visitedDependentBackgroundColorApplyingColorFilter();
+    if (!background.isVisible()) {
+        RefPtr body = document->bodyOrFrameset();
+        if (CheckedPtr bodyRenderer = body ? body->renderer() : nullptr)
+            background = bodyRenderer->style().visitedDependentBackgroundColorApplyingColorFilter();
+    }
+    return blendSourceOver(rootRenderer->theme().systemColor(CSSValueCanvas, rootRenderer->styleColorOptions()), background);
+}
+#endif
+
 void AcceleratedSurface::backgroundColorDidChange()
 {
     ASSERT(RunLoop::isMain());
     Ref webPage = m_webPage;
     const auto& color = webPage->backgroundColor();
+#if PLATFORM(CUTEFISH)
+    std::optional<Color> underPage;
+    if (RefPtr page = webPage->corePage()) {
+        auto underPageColor = page->underPageBackgroundColorOverride();
+        if (!underPageColor.isValid())
+            underPageColor = rootBackgroundColor(webPage);
+        if (underPageColor.isValid() && underPageColor.isOpaque())
+            underPage = underPageColor;
+    }
+#endif
 
     bool wasOpaque = this->isOpaque();
     {
         Locker locker { m_backgroundColorLock };
         m_backgroundColor = color;
+#if PLATFORM(CUTEFISH)
+        m_underPageBackgroundColor = underPage;
+#endif
     }
     bool isOpaque = this->isOpaque();
     if (isOpaque == wasOpaque)
@@ -1125,7 +1167,14 @@ std::optional<SkColor> AcceleratedSurface::skiaClearColor(const OptionSet<WebCor
 #if PLATFORM(CUTEFISH)
     // Frames come before the page paints anything, and the embedder shows
     // them all; an uncleared one would show the buffer's previous contents.
+    // What lies outside the document, such as the area under obscured
+    // content insets, shows the page's under-page background colour.
     UNUSED_PARAM(reasons);
+    {
+        Locker locker { m_backgroundColorLock };
+        if (m_underPageBackgroundColor)
+            return SkColor(*m_underPageBackgroundColor);
+    }
     return backgroundColor ? SkColor(*backgroundColor) : SK_ColorWHITE;
 #else
     if (reasons.contains(CompositionReason::AsyncScrolling))
@@ -1157,8 +1206,16 @@ void AcceleratedSurface::clear(const OptionSet<WebCore::CompositionReason>& reas
     clearsToBackground = true;
 #endif
     if (clearsToBackground) {
-        if (backgroundColor) {
-            auto [r, g, b, a] = backgroundColor->toResolvedColorComponentsInColorSpace(WebCore::ColorSpace::SRGB);
+        auto clearColor = backgroundColor;
+#if PLATFORM(CUTEFISH)
+        {
+            Locker locker { m_backgroundColorLock };
+            if (m_underPageBackgroundColor)
+                clearColor = m_underPageBackgroundColor;
+        }
+#endif
+        if (clearColor) {
+            auto [r, g, b, a] = clearColor->toResolvedColorComponentsInColorSpace(WebCore::ColorSpace::SRGB);
             glClearColor(r, g, b, a);
         } else
             glClearColor(1, 1, 1, 1);

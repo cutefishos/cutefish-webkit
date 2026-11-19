@@ -3336,9 +3336,24 @@ void WebPage::postInjectedBundleMessage(const String& messageName, const UserDat
     injectedBundle->didReceiveMessageToPage(Ref { *this }, messageName, webProcess.transformHandlesToObjects(protect(userData.object()).get()));
 }
 
+#if PLATFORM(CUTEFISH)
+// The surface clears what lies outside the document to the under-page colour,
+// which follows the page's background.
+static void underPageBackgroundColorDidChange(WebPage& page)
+{
+    if (RefPtr drawingArea = page.drawingArea())
+        drawingArea->backgroundColorDidChange();
+}
+#endif
+
 void WebPage::setUnderPageBackgroundColorOverride(WebCore::Color&& underPageBackgroundColorOverride)
 {
     protect(corePage())->setUnderPageBackgroundColorOverride(WTF::move(underPageBackgroundColorOverride));
+#if PLATFORM(CUTEFISH)
+    underPageBackgroundColorDidChange(*this);
+    if (RefPtr drawingArea = m_drawingArea)
+        drawingArea->setNeedsDisplay();
+#endif
 }
 
 void WebPage::setShouldSuppressHDR(bool shouldSuppressHDR)
@@ -8528,6 +8543,9 @@ void WebPage::flushPendingThemeColorChange()
 
 void WebPage::flushPendingPageExtendedBackgroundColorChange()
 {
+#if PLATFORM(CUTEFISH)
+    underPageBackgroundColorDidChange(*this);
+#endif
     if (!m_pendingPageExtendedBackgroundColorChange)
         return;
 

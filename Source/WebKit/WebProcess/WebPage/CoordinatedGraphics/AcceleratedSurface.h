@@ -487,6 +487,9 @@ private:
 #endif
     mutable Lock m_backgroundColorLock;
     std::optional<WebCore::Color> m_backgroundColor WTF_GUARDED_BY_LOCK(m_backgroundColorLock);
+#if PLATFORM(CUTEFISH)
+    std::optional<WebCore::Color> m_underPageBackgroundColor WTF_GUARDED_BY_LOCK(m_backgroundColorLock);
+#endif
     SwapChain m_swapChain;
     RenderTarget* m_target { nullptr };
     Vector<std::pair<RenderTarget*, Vector<WebCore::IntRect, 1>>, 1> m_pendingFrameNotifyTargets;
