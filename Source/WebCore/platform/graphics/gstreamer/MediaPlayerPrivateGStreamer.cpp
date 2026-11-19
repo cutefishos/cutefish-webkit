@@ -1246,6 +1246,15 @@ void MediaPlayerPrivateGStreamer::setPlaybinURL(const URL& url)
 
     m_url = URL { cleanURLString };
     GST_INFO_OBJECT(pipeline(), "Load %s", m_url.string().utf8().data());
+#if PLATFORM(CUTEFISH)
+    // File and embedder-handled URLs are read by the page's resource loader:
+    // the web process's sandbox does not see every file the page may read.
+    if (!m_url.protocolIsInHTTPFamily() && !m_url.protocolIsBlob() && !m_url.protocolIsData() && !m_url.protocolIs("mediasourceblob"_s) && !m_url.protocolIs("mediastream"_s)) {
+        auto uri = makeString(webkitWebSrcResourceProtocolPrefix, m_url.string());
+        g_object_set(m_pipeline.get(), "uri", uri.utf8().data(), nullptr);
+        return;
+    }
+#endif
     g_object_set(m_pipeline.get(), "uri", m_url.string().utf8().data(), nullptr);
 }
 

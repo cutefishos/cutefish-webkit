@@ -37,6 +37,7 @@
 #include "ResourceError.h"
 #include "SharedBuffer.h"
 #include <wtf/CrossThreadCopier.h>
+#include <wtf/FileSystem.h>
 #include <wtf/Language.h>
 #include <wtf/MainThread.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -119,6 +120,23 @@ void CurlRequest::resume()
         startWithJobManager();
 }
 
+#if PLATFORM(CUTEFISH)
+// The bytes of a local file a byte range request asks for, first and last.
+static std::optional<std::pair<uint64_t, uint64_t>> fileByteRange(const ResourceRequest& request, uint64_t size)
+{
+    auto header = request.httpHeaderField(HTTPHeaderName::Range);
+    if (header.isEmpty())
+        return std::nullopt;
+    auto range = parseRange(header, RangeAllowWhitespace::Yes);
+    if (!range || !range->start || *range->start >= size)
+        return std::nullopt;
+    uint64_t last = range->end ? std::min(*range->end, size - 1) : size - 1;
+    if (last < *range->start)
+        return std::nullopt;
+    return std::pair { *range->start, last };
+}
+#endif
+
 void CurlRequest::startWithJobManager()
 {
     ASSERT(isMainThread());
@@ -194,6 +212,15 @@ CURL* CurlRequest::setupTransfer()
     m_curlHandle->setURL(m_request.url(), m_localhostAlias);
 
     m_curlHandle->appendRequestHeaders(httpHeaderFields);
+
+#if PLATFORM(CUTEFISH)
+    if (m_request.url().protocolIsFile()) {
+        if (auto size = FileSystem::fileSize(m_request.url().fileSystemPath())) {
+            if (auto range = fileByteRange(m_request, *size))
+                curl_easy_setopt(m_curlHandle->handle(), CURLOPT_RANGE, makeString(range->first, '-', range->second).utf8().data());
+        }
+    }
+#endif
 
     const auto& method = m_request.httpMethod();
     if (method == "GET"_s)
@@ -587,12 +614,39 @@ void CurlRequest::invokeDidReceiveResponseForFile(const URL& url)
     // Determine the MIME type based on the path.
     auto mimeType = MIMETypeRegistry::mimeTypeForPath(url.path().toString());
 
+#if PLATFORM(CUTEFISH)
+    // Media sources read local files in byte ranges and need their length.
+    int statusCode = 200;
+    long long expectedLength = 0;
+    Vector<String> lengthHeaders;
+    if (auto size = FileSystem::fileSize(url.fileSystemPath())) {
+        lengthHeaders.append("Accept-Ranges: bytes"_s);
+        if (auto range = fileByteRange(m_request, *size)) {
+            statusCode = 206;
+            expectedLength = range->second - range->first + 1;
+            lengthHeaders.append(makeString("Content-Range: bytes "_s, range->first, '-', range->second, '/', *size));
+        } else
+            expectedLength = *size;
+        lengthHeaders.append(makeString("Content-Length: "_s, expectedLength));
+    }
+#endif
+
     // DidReceiveResponse must not be called immediately
+#if PLATFORM(CUTEFISH)
+    runOnWorkerThreadIfRequired([this, protectedThis = Ref { *this }, url = crossThreadCopy(url), mimeType = crossThreadCopy(WTF::move(mimeType)), statusCode, expectedLength, lengthHeaders = crossThreadCopy(WTF::move(lengthHeaders))]() mutable {
+        CurlResponse response;
+        response.url = WTF::move(url);
+        response.statusCode = statusCode;
+        response.expectedContentLength = expectedLength;
+        response.headers.append(makeString("Content-Type: "_s, mimeType));
+        response.headers.appendVector(WTF::move(lengthHeaders));
+#else
     runOnWorkerThreadIfRequired([this, protectedThis = Ref { *this }, url = crossThreadCopy(url), mimeType = crossThreadCopy(WTF::move(mimeType))]() mutable {
         CurlResponse response;
         response.url = WTF::move(url);
         response.statusCode = 200;
         response.headers.append(makeString("Content-Type: "_s, mimeType));
+#endif
 
         invokeDidReceiveResponse(response, [this] {
             startWithJobManager();

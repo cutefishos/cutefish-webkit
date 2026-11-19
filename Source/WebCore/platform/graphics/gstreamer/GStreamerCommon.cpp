@@ -310,6 +310,12 @@ std::optional<WebCore::IntSize> getDisplaySize(WebCore::IntSize originalSize, in
 
 bool isProtocolAllowed(const WTF::URL& url)
 {
+#if PLATFORM(CUTEFISH)
+    // Other schemes load through the page's resource loader, which answers
+    // the schemes the embedder handles and refuses the rest.
+    if (url.isValid())
+        return true;
+#endif
     HashSet<String> allowedProtocols = { "blob"_s, "data"_s, "file"_s, "http"_s, "https"_s };
 #if ENABLE(MEDIA_SOURCE)
     allowedProtocols.add("mediasourceblob"_s);

@@ -42,6 +42,12 @@ G_BEGIN_DECLS
 
 static constexpr auto WEBKIT_WEB_SRC_RESOURCE_LOADER_CONTEXT_TYPE_NAME = "webkit.resource-loader"_s;
 
+#if PLATFORM(CUTEFISH)
+// A URI the source reads through the page's resource loader whatever the
+// scheme of the URL that follows the prefix.
+static constexpr auto webkitWebSrcResourceProtocolPrefix = "webkit-resource:"_s;
+#endif
+
 struct WebKitWebSrcPrivate;
 
 struct WebKitWebSrc {

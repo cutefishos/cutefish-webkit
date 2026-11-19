@@ -636,6 +636,13 @@ static void webKitWebSrcMakeRequest(WebKitWebSrc* src, DataMutexLocker<WebKitWeb
     if (priv->httpMethod)
         request.setHTTPMethod(priv->httpMethod.span());
 
+#if PLATFORM(CUTEFISH)
+    // The length of the response must be the length of the data the source
+    // receives, which a compressed response's is not.
+    if (!priv->compress)
+        request.setHTTPHeaderField(HTTPHeaderName::AcceptEncoding, "identity"_s);
+#endif
+
 #if USE(SOUP)
     // By default, HTTP Accept-Encoding is disabled here as we don't
     // want the received response to be encoded in any way as we need
@@ -876,7 +883,11 @@ static gboolean webKitWebSrcUnLockStop(GstBaseSrc* baseSrc)
 
 static bool urlHasSupportedProtocol(const URL& url)
 {
+#if PLATFORM(CUTEFISH)
+    return url.isValid();
+#else
     return url.isValid() && (url.protocolIsInHTTPFamily() || url.protocolIsBlob());
+#endif
 }
 
 // uri handler interface
@@ -888,12 +899,20 @@ static GstURIType webKitWebSrcUriGetType(GType)
 
 const gchar* const* webKitWebSrcGetProtocols(GType)
 {
+#if PLATFORM(CUTEFISH)
+    static std::array<const char*, 5> protocols { "http", "https", "blob", "webkit-resource" };
+#else
     static std::array<const char*, 4> protocols { "http", "https", "blob" };
+#endif
     return protocols.data();
 }
 
 static URL convertPlaybinURI(String&& uriString)
 {
+#if PLATFORM(CUTEFISH)
+    if (uriString.startsWith(webkitWebSrcResourceProtocolPrefix))
+        return URL { uriString.substring(webkitWebSrcResourceProtocolPrefix.length()) };
+#endif
     return URL { WTF::move(uriString) };
 }
 
