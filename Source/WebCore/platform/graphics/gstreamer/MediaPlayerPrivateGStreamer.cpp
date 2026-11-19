@@ -204,6 +204,12 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer& player)
 
 #if USE(COORDINATED_GRAPHICS)
     m_contentsBufferProxy = CoordinatedPlatformLayerBufferProxy::create();
+    // A paused video moved into another layer, as into full screen, shows
+    // its frame there too.
+    m_contentsBufferProxy->setTargetLayerChangedHandler([weakThis = ThreadSafeWeakPtr { *this }] {
+        if (RefPtr protectedThis = weakThis.get())
+            protectedThis->pushTextureToCompositor(true);
+    });
 #endif
 
     ensureGStreamerInitialized();

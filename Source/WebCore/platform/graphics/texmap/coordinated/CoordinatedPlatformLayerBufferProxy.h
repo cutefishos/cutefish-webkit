@@ -26,6 +26,7 @@
 #pragma once
 
 #if USE(COORDINATED_GRAPHICS)
+#include <wtf/Function.h>
 #include <wtf/Lock.h>
 #include <wtf/RefPtr.h>
 #include <wtf/RunLoop.h>
@@ -46,6 +47,11 @@ public:
     void consumePendingBufferIfNeeded();
     void setDisplayBuffer(std::unique_ptr<CoordinatedPlatformLayerBuffer>&&);
 
+    // Called on the main thread after the proxy moved to another layer,
+    // which shows nothing until a buffer comes; a still image sends its
+    // buffer again.
+    void setTargetLayerChangedHandler(Function<void()>&&);
+
 #if ENABLE(VIDEO) && USE(GSTREAMER)
     enum class ShouldWait : bool { No, Yes };
     void dropCurrentBufferWhilePreservingTexture(ShouldWait);
@@ -57,6 +63,7 @@ private:
     Lock m_lock;
     RefPtr<CoordinatedPlatformLayer> m_layer WTF_GUARDED_BY_LOCK(m_lock);
     std::unique_ptr<CoordinatedPlatformLayerBuffer> m_pendingBuffer WTF_GUARDED_BY_LOCK(m_lock);
+    Function<void()> m_targetLayerChangedHandler;
 #if ENABLE(VIDEO) && USE(GSTREAMER)
     RefPtr<RunLoop> m_compositingRunLoop WTF_GUARDED_BY_LOCK(m_lock);
 #endif

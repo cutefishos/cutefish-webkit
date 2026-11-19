@@ -51,21 +51,37 @@ CoordinatedPlatformLayerBufferProxy::~CoordinatedPlatformLayerBufferProxy()
 void CoordinatedPlatformLayerBufferProxy::setTargetLayer(CoordinatedPlatformLayer* layer)
 {
     ASSERT(RunLoop::isMain());
-    Locker locker { m_lock };
-    if (m_layer == layer)
-        return;
+    {
+        Locker locker { m_lock };
+        if (m_layer == layer)
+            return;
 
-    m_layer = layer;
-    if (m_layer) {
+        m_layer = layer;
+        if (m_layer) {
 #if ENABLE(VIDEO) && USE(GSTREAMER)
-        m_compositingRunLoop = m_layer->compositingRunLoop();
+            m_compositingRunLoop = m_layer->compositingRunLoop();
 #endif
-    } else {
-        m_pendingBuffer = nullptr;
+        } else {
+            m_pendingBuffer = nullptr;
 #if ENABLE(VIDEO) && USE(GSTREAMER)
-        m_compositingRunLoop = nullptr;
+            m_compositingRunLoop = nullptr;
 #endif
+        }
     }
+    // The new layer may be locked by the caller; the handler sends its buffer
+    // once that is over.
+    if (layer && m_targetLayerChangedHandler) {
+        RunLoop::mainSingleton().dispatch([protectedThis = Ref { *this }] {
+            if (protectedThis->m_targetLayerChangedHandler)
+                protectedThis->m_targetLayerChangedHandler();
+        });
+    }
+}
+
+void CoordinatedPlatformLayerBufferProxy::setTargetLayerChangedHandler(Function<void()>&& handler)
+{
+    ASSERT(RunLoop::isMain());
+    m_targetLayerChangedHandler = WTF::move(handler);
 }
 
 void CoordinatedPlatformLayerBufferProxy::consumePendingBufferIfNeeded()
