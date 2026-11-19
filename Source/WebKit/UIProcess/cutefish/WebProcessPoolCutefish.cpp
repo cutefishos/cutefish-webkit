@@ -33,6 +33,7 @@
 #include "LegacyGlobalSettings.h"
 #include "MemoryPressureMonitor.h"
 #include "NetworkProcessCreationParameters.h"
+#include "ScreensCutefish.h"
 #include "WebMemoryPressureHandler.h"
 #include "WebProcessCreationParameters.h"
 #include <WebCore/NotImplemented.h>
@@ -66,6 +67,7 @@ void WebProcessPool::platformInitializeWebProcess(const WebProcessProxy&, WebPro
     parameters.rendererBufferTransportMode.add(RendererBufferTransportMode::SharedMemory);
 
     parameters.availableInputDevices = { AvailableInputDevices::Mouse, AvailableInputDevices::Keyboard };
+    parameters.screenProperties = cutefishScreenProperties();
     parameters.memoryCacheDisabled = m_memoryCacheDisabled || LegacyGlobalSettings::singleton().cacheModel() == CacheModel::DocumentViewer;
 
 #if OS(LINUX)

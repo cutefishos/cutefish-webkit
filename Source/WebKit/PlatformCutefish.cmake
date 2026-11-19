@@ -44,6 +44,7 @@ list(APPEND WebKit_SOURCES
     UIProcess/API/C/cutefish/WKDownloadDelegate.cpp
     UIProcess/API/C/cutefish/WKHTTPHeaders.cpp
     UIProcess/API/C/cutefish/WKMainRunLoop.cpp
+    UIProcess/API/C/cutefish/WKScreens.cpp
     UIProcess/API/C/cutefish/WKSpellChecker.cpp
     UIProcess/API/C/cutefish/WKURLSchemeHandler.cpp
     UIProcess/API/C/cutefish/WKView.cpp
@@ -166,6 +167,7 @@ list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
     UIProcess/API/C/cutefish/WKHTTPHeaders.h
     UIProcess/API/C/cutefish/WKMainRunLoop.h
     UIProcess/API/C/cutefish/WKPasteboard.h
+    UIProcess/API/C/cutefish/WKScreens.h
     UIProcess/API/C/cutefish/WKSpellChecker.h
     UIProcess/API/C/cutefish/WKURLSchemeHandler.h
     UIProcess/API/C/cutefish/WKView.h
