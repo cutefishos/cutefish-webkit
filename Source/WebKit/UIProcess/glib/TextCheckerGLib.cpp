@@ -39,8 +39,79 @@
 #include <WebCore/TextCheckerEnchant.h>
 #endif
 
+#if PLATFORM(CUTEFISH)
+#include "SpellCheckerClientCutefish.h"
+#endif
+
 namespace WebKit {
 using namespace WebCore;
+
+#if PLATFORM(CUTEFISH)
+// Spelling is the embedder's, as the platform's spell checker answers for
+// every program.
+class EmbedderSpellChecker {
+public:
+    static EmbedderSpellChecker& singleton()
+    {
+        static NeverDestroyed<EmbedderSpellChecker> checker;
+        return checker;
+    }
+
+    void checkSpellingOfString(const String& text, int& misspellingLocation, int& misspellingLength)
+    {
+        auto* client = spellCheckerClient();
+        if (!client || !client->checkSpelling || text.isEmpty())
+            return;
+        auto characters = StringView(text).upconvertedCharacters();
+        size_t location = 0;
+        size_t length = 0;
+        client->checkSpelling(reinterpret_cast<const uint16_t*>(characters.get()), text.length(), &location, &length, client->context);
+        if (!length || location >= text.length())
+            return;
+        misspellingLocation = location;
+        misspellingLength = std::min<size_t>(length, text.length() - location);
+    }
+
+    Vector<String> getGuessesForWord(const String& word)
+    {
+        Vector<String> guesses;
+        auto* client = spellCheckerClient();
+        if (!client || !client->guesses || word.isEmpty())
+            return guesses;
+        auto characters = StringView(word).upconvertedCharacters();
+        client->guesses(reinterpret_cast<const uint16_t*>(characters.get()), word.length(), [](const uint16_t* guess, size_t length, void* context) {
+            static_cast<Vector<String>*>(context)->append(String(std::span { reinterpret_cast<const char16_t*>(guess), length }));
+        }, &guesses, client->context);
+        return guesses;
+    }
+
+    void learnWord(const String& word)
+    {
+        auto* client = spellCheckerClient();
+        if (!client || !client->learnWord)
+            return;
+        auto characters = StringView(word).upconvertedCharacters();
+        client->learnWord(reinterpret_cast<const uint16_t*>(characters.get()), word.length(), client->context);
+    }
+
+    void ignoreWord(const String& word)
+    {
+        auto* client = spellCheckerClient();
+        if (!client || !client->ignoreWord)
+            return;
+        auto characters = StringView(word).upconvertedCharacters();
+        client->ignoreWord(reinterpret_cast<const uint16_t*>(characters.get()), word.length(), client->context);
+    }
+
+    void updateSpellCheckingLanguages(const Vector<String>&) { }
+    Vector<String> loadedSpellCheckingLanguages() { return { }; }
+};
+
+using TextCheckerEnchant = EmbedderSpellChecker;
+#define ENABLE_SPELLCHECK_FOR_EMBEDDER 1
+#else
+#define ENABLE_SPELLCHECK_FOR_EMBEDDER ENABLE_SPELLCHECK
+#endif
 
 OptionSet<TextCheckerState>& checkerState()
 {
@@ -65,7 +136,7 @@ bool TextChecker::isTestingMode()
     return testingModeEnabled;
 }
 
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
 static void updateStateForAllProcessPools()
 {
     for (const auto& processPool : WebProcessPool::allProcessPools())
@@ -75,7 +146,9 @@ static void updateStateForAllProcessPools()
 
 bool TextChecker::isContinuousSpellCheckingAllowed()
 {
-#if ENABLE(SPELLCHECK)
+#if PLATFORM(CUTEFISH)
+    return spellCheckerClient();
+#elif ENABLE(SPELLCHECK_FOR_EMBEDDER)
     return true;
 #else
     return false;
@@ -84,7 +157,7 @@ bool TextChecker::isContinuousSpellCheckingAllowed()
 
 bool TextChecker::setContinuousSpellCheckingEnabled(bool isContinuousSpellCheckingEnabled)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     if (checkerState().contains(TextCheckerState::ContinuousSpellCheckingEnabled) == isContinuousSpellCheckingEnabled)
         return false;
     checkerState().set(TextCheckerState::ContinuousSpellCheckingEnabled, isContinuousSpellCheckingEnabled);
@@ -97,7 +170,7 @@ bool TextChecker::setContinuousSpellCheckingEnabled(bool isContinuousSpellChecki
 
 void TextChecker::setGrammarCheckingEnabled(bool isGrammarCheckingEnabled)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     if (checkerState().contains(TextCheckerState::GrammarCheckingEnabled) == isGrammarCheckingEnabled)
         return;
     checkerState().set(TextCheckerState::GrammarCheckingEnabled, isGrammarCheckingEnabled);
@@ -109,7 +182,7 @@ void TextChecker::setGrammarCheckingEnabled(bool isGrammarCheckingEnabled)
 
 void TextChecker::continuousSpellCheckingEnabledStateChanged(bool enabled)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     checkerState().set(TextCheckerState::ContinuousSpellCheckingEnabled, enabled);
 #else
     UNUSED_PARAM(enabled);
@@ -118,7 +191,7 @@ void TextChecker::continuousSpellCheckingEnabledStateChanged(bool enabled)
 
 void TextChecker::grammarCheckingEnabledStateChanged(bool enabled)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     checkerState().set(TextCheckerState::GrammarCheckingEnabled, enabled);
 #else
     UNUSED_PARAM(enabled);
@@ -136,7 +209,7 @@ void TextChecker::closeSpellDocumentWithTag(SpellDocumentTag)
 
 void TextChecker::checkSpellingOfString(SpellDocumentTag, StringView text, int32_t& misspellingLocation, int32_t& misspellingLength)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     misspellingLocation = -1;
     misspellingLength = 0;
     TextCheckerEnchant::singleton().checkSpellingOfString(text.toStringWithoutCopying(), misspellingLocation, misspellingLength);
@@ -170,7 +243,7 @@ void TextChecker::updateSpellingUIWithGrammarString(SpellDocumentTag, const Stri
 
 void TextChecker::getGuessesForWord(SpellDocumentTag, const String& word, const String& /* context */, int32_t /* insertionPoint */, Vector<String>& guesses, bool)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     guesses = TextCheckerEnchant::singleton().getGuessesForWord(word);
 #else
     UNUSED_PARAM(word);
@@ -180,7 +253,7 @@ void TextChecker::getGuessesForWord(SpellDocumentTag, const String& word, const 
 
 void TextChecker::learnWord(SpellDocumentTag, const String& word)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     TextCheckerEnchant::singleton().learnWord(word);
 #else
     UNUSED_PARAM(word);
@@ -189,7 +262,7 @@ void TextChecker::learnWord(SpellDocumentTag, const String& word)
 
 void TextChecker::ignoreWord(SpellDocumentTag, const String& word)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     TextCheckerEnchant::singleton().ignoreWord(word);
 #else
     UNUSED_PARAM(word);
@@ -198,7 +271,7 @@ void TextChecker::ignoreWord(SpellDocumentTag, const String& word)
 
 void TextChecker::requestCheckingOfString(Ref<TextCheckerCompletion>&& completion, int32_t insertionPoint)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     TextCheckingRequestData request = completion->textCheckingRequestData();
     ASSERT(request.identifier());
     ASSERT(request.checkingTypes());
@@ -209,7 +282,7 @@ void TextChecker::requestCheckingOfString(Ref<TextCheckerCompletion>&& completio
 #endif
 }
 
-#if USE(UNIFIED_TEXT_CHECKING) && ENABLE(SPELLCHECK)
+#if USE(UNIFIED_TEXT_CHECKING) && ENABLE(SPELLCHECK_FOR_EMBEDDER)
 static unsigned nextWordOffset(StringView text, unsigned currentOffset)
 {
     // FIXME: avoid creating textIterator object here, it could be passed as a parameter.
@@ -241,7 +314,7 @@ static unsigned nextWordOffset(StringView text, unsigned currentOffset)
 Vector<TextCheckingResult> TextChecker::checkTextOfParagraph(SpellDocumentTag spellDocumentTag, StringView text, int32_t insertionPoint, OptionSet<TextCheckingType> checkingTypes, bool)
 {
     UNUSED_PARAM(insertionPoint);
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     if (!checkingTypes.contains(TextCheckingType::Spelling))
         return { };
 
@@ -278,13 +351,13 @@ Vector<TextCheckingResult> TextChecker::checkTextOfParagraph(SpellDocumentTag sp
     UNUSED_PARAM(text);
     UNUSED_PARAM(checkingTypes);
     return Vector<TextCheckingResult>();
-#endif // ENABLE(SPELLCHECK)
+#endif // ENABLE(SPELLCHECK_FOR_EMBEDDER)
 }
 #endif // USE(UNIFIED_TEXT_CHECKING)
 
 void TextChecker::setSpellCheckingLanguages(const Vector<String>& languages)
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     TextCheckerEnchant::singleton().updateSpellCheckingLanguages(languages);
 #else
     UNUSED_PARAM(languages);
@@ -293,7 +366,7 @@ void TextChecker::setSpellCheckingLanguages(const Vector<String>& languages)
 
 Vector<String> TextChecker::loadedSpellCheckingLanguages()
 {
-#if ENABLE(SPELLCHECK)
+#if ENABLE(SPELLCHECK_FOR_EMBEDDER)
     return TextCheckerEnchant::singleton().loadedSpellCheckingLanguages();
 #else
     return Vector<String>();
