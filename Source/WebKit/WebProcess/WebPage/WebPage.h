@@ -3061,12 +3061,7 @@ private:
 
 #if ENABLE(DRAG_SUPPORT)
     bool m_isStartingDrag { false };
-#if PLATFORM(CUTEFISH)
-    // The view has no drag and drop yet; a press and drag only selects.
-    OptionSet<WebCore::DragSourceAction> m_allowedDragSourceActions;
-#else
     OptionSet<WebCore::DragSourceAction> m_allowedDragSourceActions { WebCore::anyDragSourceAction() };
-#endif
 #endif
 
 #if PLATFORM(IOS_FAMILY) && ENABLE(DRAG_SUPPORT)

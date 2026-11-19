@@ -93,6 +93,35 @@ typedef void (*WKViewContentsSizeChangedCallback)(WKViewRef, WKSize size, const 
 typedef void (*WKViewEnterFullScreenCallback)(WKViewRef, const void* clientInfo);
 typedef void (*WKViewExitFullScreenCallback)(WKViewRef, const void* clientInfo);
 
+// What a drag carries; any field may be missing (null, or a zero count).
+// fileURLs are file: URLs; image holds an image's encoded bytes.
+typedef struct WKViewDragData {
+    const char* text;
+    const char* markup;
+    const char* url;
+    const char* urlTitle;
+    const char* const* fileURLs;
+    size_t fileURLCount;
+    const void* image;
+    size_t imageSize;
+} WKViewDragData;
+
+// Drag operations, combined as bits.
+enum {
+    kWKViewDragOperationCopy = 1 << 0,
+    kWKViewDragOperationLink = 1 << 1,
+    kWKViewDragOperationGeneric = 1 << 2,
+    kWKViewDragOperationPrivate = 1 << 3,
+    kWKViewDragOperationMove = 1 << 4,
+    kWKViewDragOperationDelete = 1 << 5
+};
+
+// The page starts dragging its data with the operations it allows. The
+// image, when there is one, is premultiplied BGRA rows, top first, with the
+// pointer at hotspot in it. Answer with WKViewDragSourceEnded once the drag
+// ends; without a callback the drag is cancelled.
+typedef void (*WKViewStartDragCallback)(WKViewRef, const WKViewDragData*, uint32_t operations, const void* imagePixels, uint32_t imageWidth, uint32_t imageHeight, uint32_t imageStride, WKPoint hotspot, const void* clientInfo);
+
 typedef struct WKViewClientBase {
     int version;
     const void* clientInfo;
@@ -117,6 +146,29 @@ typedef struct WKViewClientV0 {
     WKViewContentsSizeChangedCallback contentsSizeChanged;
     WKViewUnderPageBackgroundColorChangedCallback underPageBackgroundColorChanged;
 } WKViewClientV0;
+
+typedef struct WKViewClientV1 {
+    WKViewClientBase base;
+
+    // version 0
+    WKViewBufferCreatedCallback bufferCreated;
+    WKViewBufferDestroyedCallback bufferDestroyed;
+    WKViewFrameCallback frame;
+    WKViewSetCursorCallback setCursor;
+    WKViewToolTipChangedCallback toolTipChanged;
+    WKViewEnterFullScreenCallback enterFullScreen;
+    WKViewExitFullScreenCallback exitFullScreen;
+    WKViewInputMethodStateCallback inputMethodStateChanged;
+    WKViewShowPopupMenuCallback showPopupMenu;
+    WKViewHidePopupMenuCallback hidePopupMenu;
+    WKViewShowContextMenuCallback showContextMenu;
+    WKViewWheelEventNotHandledCallback wheelEventNotHandled;
+    WKViewContentsSizeChangedCallback contentsSizeChanged;
+    WKViewUnderPageBackgroundColorChangedCallback underPageBackgroundColorChanged;
+
+    // version 1
+    WKViewStartDragCallback startDrag;
+} WKViewClientV1;
 
 #ifdef __cplusplus
 }

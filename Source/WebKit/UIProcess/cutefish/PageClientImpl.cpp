@@ -129,9 +129,9 @@ void PageClientImpl::selectionDidChange()
 }
 
 #if ENABLE(DRAG_SUPPORT)
-void PageClientImpl::startDrag(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&&)
+void PageClientImpl::startDrag(WebCore::SelectionData&& selectionData, OptionSet<WebCore::DragOperation> operations, RefPtr<WebCore::ShareableBitmap>&& dragImage, WebCore::IntPoint&& hotspot)
 {
-    m_view.page().dragCancelled();
+    m_view.startDrag(WTF::move(selectionData), operations, WTF::move(dragImage), WTF::move(hotspot));
 }
 #endif
 

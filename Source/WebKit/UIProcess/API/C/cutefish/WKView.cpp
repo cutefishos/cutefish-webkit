@@ -121,6 +121,36 @@ void WKViewContextMenuItemSelected(WKViewRef view, int32_t index)
     toImpl(view)->contextMenuItemSelected(index);
 }
 
+void WKViewDragEntered(WKViewRef view, const WKViewDragData* data, WKPoint point, uint32_t operations)
+{
+    toImpl(view)->dragEntered(*data, toIntPoint(point), operations);
+}
+
+void WKViewDragUpdated(WKViewRef view, const WKViewDragData* data, WKPoint point, uint32_t operations)
+{
+    toImpl(view)->dragUpdated(*data, toIntPoint(point), operations);
+}
+
+void WKViewDragExited(WKViewRef view, const WKViewDragData* data, WKPoint point, uint32_t operations)
+{
+    toImpl(view)->dragExited(*data, toIntPoint(point), operations);
+}
+
+void WKViewPerformDrag(WKViewRef view, const WKViewDragData* data, WKPoint point, uint32_t operations)
+{
+    toImpl(view)->performDrag(*data, toIntPoint(point), operations);
+}
+
+uint32_t WKViewGetDragOperation(WKViewRef view)
+{
+    return toImpl(view)->dragOperation();
+}
+
+void WKViewDragSourceEnded(WKViewRef view, WKPoint point, uint32_t operation)
+{
+    toImpl(view)->dragSourceEnded(toIntPoint(point), operation);
+}
+
 void WKViewRequestExitFullScreen(WKViewRef view)
 {
     toImpl(view)->requestExitFullScreen();

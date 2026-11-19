@@ -56,6 +56,18 @@ WK_EXPORT void WKViewFrameDisplayed(WKViewRef);
 // buffer; it passes to the view.
 WK_EXPORT void WKViewReleaseBuffer(WKViewRef, uint64_t bufferIdentifier, int releaseFence);
 
+// A drag from anywhere over the view, at a point in view coordinates, with
+// the operations its source allows. WKViewGetDragOperation answers the
+// operation the page last chose, 0 for none; WKViewPerformDrag drops.
+WK_EXPORT void WKViewDragEntered(WKViewRef, const WKViewDragData*, WKPoint, uint32_t operations);
+WK_EXPORT void WKViewDragUpdated(WKViewRef, const WKViewDragData*, WKPoint, uint32_t operations);
+WK_EXPORT void WKViewDragExited(WKViewRef, const WKViewDragData*, WKPoint, uint32_t operations);
+WK_EXPORT void WKViewPerformDrag(WKViewRef, const WKViewDragData*, WKPoint, uint32_t operations);
+WK_EXPORT uint32_t WKViewGetDragOperation(WKViewRef);
+// The drag the page started ended at a point, with the operation done, 0
+// when it was cancelled.
+WK_EXPORT void WKViewDragSourceEnded(WKViewRef, WKPoint, uint32_t operation);
+
 WK_EXPORT void WKViewRequestExitFullScreen(WKViewRef);
 WK_EXPORT bool WKViewIsFullScreen(WKViewRef);
 

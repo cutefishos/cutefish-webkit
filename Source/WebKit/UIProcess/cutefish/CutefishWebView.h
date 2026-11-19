@@ -15,7 +15,7 @@
 
 namespace API {
 template<> struct ClientTraits<WKViewClientBase> {
-    typedef std::tuple<WKViewClientV0> Versions;
+    typedef std::tuple<WKViewClientV0, WKViewClientV1> Versions;
 };
 }
 
@@ -25,6 +25,9 @@ class PageConfiguration;
 
 namespace WebCore {
 class Cursor;
+class ShareableBitmap;
+class SelectionData;
+enum class DragOperation : uint8_t;
 }
 
 namespace WebKit {
@@ -44,7 +47,7 @@ public:
     virtual ~CutefishWebView();
 
     void setClient(const WKViewClientBase*);
-    const WKViewClientV0& client() const { return m_client.client(); }
+    const WKViewClientV1& client() const { return m_client.client(); }
 
     WebPageProxy& page() { return *m_page; }
 
@@ -72,6 +75,13 @@ public:
     void confirmComposition(const String&);
     void cancelComposition();
 
+    void dragEntered(const WKViewDragData&, const WebCore::IntPoint&, uint32_t operations);
+    void dragUpdated(const WKViewDragData&, const WebCore::IntPoint&, uint32_t operations);
+    void dragExited(const WKViewDragData&, const WebCore::IntPoint&, uint32_t operations);
+    void performDrag(const WKViewDragData&, const WebCore::IntPoint&, uint32_t operations);
+    uint32_t dragOperation() const;
+    void dragSourceEnded(const WebCore::IntPoint&, uint32_t operation);
+
     void requestExitFullScreen();
     bool isFullScreen() const { return m_isFullScreen; }
 
@@ -90,6 +100,7 @@ public:
     void enterFullScreen(CompletionHandler<void(bool)>&&);
     void exitFullScreen(CompletionHandler<void()>&&);
     void closeFullScreenManager();
+    void startDrag(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&& hotspot);
 
 private:
     CutefishWebView(const API::PageConfiguration&, const WebCore::IntSize&);
@@ -97,7 +108,7 @@ private:
     class ViewClient : public API::Client<WKViewClientBase> {
     public:
         explicit ViewClient(const WKViewClientBase* client) { initialize(client); }
-        const WKViewClientV0& client() const { return m_client; }
+        const WKViewClientV1& client() const { return m_client; }
     };
 
     std::unique_ptr<PageClientImpl> m_pageClient;

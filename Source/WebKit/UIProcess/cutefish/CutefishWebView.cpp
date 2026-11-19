@@ -24,9 +24,15 @@
 #include <WebCore/Color.h>
 #include <WebCore/CompositionUnderline.h>
 #include <WebCore/Cursor.h>
+#include <WebCore/DragData.h>
+#include <WebCore/Image.h>
+#include <WebCore/SelectionData.h>
+#include <WebCore/ShareableBitmap.h>
+#include <WebCore/SharedBuffer.h>
 #include <WebCore/PlatformKeyboardEvent.h>
 #include <wtf/TZoneMallocInlines.h>
 #include <wtf/text/CString.h>
+#include <wtf/text/StringBuilder.h>
 #include <xkbcommon/xkbcommon.h>
 
 namespace WebKit {
@@ -577,5 +583,108 @@ void CutefishWebView::requestExitFullScreen()
     }
 #endif
 }
+
+#if ENABLE(DRAG_SUPPORT)
+static WebCore::SelectionData selectionData(const WKViewDragData& data)
+{
+    WebCore::SelectionData selection;
+    if (data.text)
+        selection.setText(String::fromUTF8(data.text));
+    if (data.markup)
+        selection.setMarkup(String::fromUTF8(data.markup));
+    if (data.url)
+        selection.setURL(URL { String::fromUTF8(data.url) }, data.urlTitle ? String::fromUTF8(data.urlTitle) : String());
+    if (data.fileURLCount) {
+        StringBuilder list;
+        for (size_t i = 0; i < data.fileURLCount; ++i) {
+            list.append(String::fromUTF8(data.fileURLs[i]));
+            list.append("\r\n"_s);
+        }
+        selection.setURIList(list.toString());
+    }
+    return selection;
+}
+
+void CutefishWebView::dragEntered(const WKViewDragData& data, const WebCore::IntPoint& point, uint32_t operations)
+{
+    auto selection = selectionData(data);
+    WebCore::DragData dragData(&selection, point, point, OptionSet<WebCore::DragOperation>::fromRaw(operations));
+    m_page->dragEntered(dragData);
+}
+
+void CutefishWebView::dragUpdated(const WKViewDragData& data, const WebCore::IntPoint& point, uint32_t operations)
+{
+    auto selection = selectionData(data);
+    WebCore::DragData dragData(&selection, point, point, OptionSet<WebCore::DragOperation>::fromRaw(operations));
+    m_page->dragUpdated(dragData);
+}
+
+void CutefishWebView::dragExited(const WKViewDragData& data, const WebCore::IntPoint& point, uint32_t operations)
+{
+    auto selection = selectionData(data);
+    WebCore::DragData dragData(&selection, point, point, OptionSet<WebCore::DragOperation>::fromRaw(operations));
+    m_page->dragExited(dragData);
+    m_page->resetCurrentDragInformation();
+}
+
+void CutefishWebView::performDrag(const WKViewDragData& data, const WebCore::IntPoint& point, uint32_t operations)
+{
+    auto selection = selectionData(data);
+    WebCore::DragData dragData(&selection, point, point, OptionSet<WebCore::DragOperation>::fromRaw(operations));
+    m_page->performDragOperation(dragData, { }, { }, { });
+}
+
+uint32_t CutefishWebView::dragOperation() const
+{
+    auto operation = m_page->currentDragOperation();
+    return operation ? static_cast<uint32_t>(*operation) : 0;
+}
+
+void CutefishWebView::dragSourceEnded(const WebCore::IntPoint& point, uint32_t operation)
+{
+    m_page->dragEnded(point, point, OptionSet<WebCore::DragOperation>::fromRaw(operation));
+}
+
+void CutefishWebView::startDrag(WebCore::SelectionData&& selection, OptionSet<WebCore::DragOperation> operations, RefPtr<WebCore::ShareableBitmap>&& image, WebCore::IntPoint&& hotspot)
+{
+    auto& client = this->client();
+    if (!client.startDrag) {
+        m_page->dragCancelled();
+        return;
+    }
+
+    CString text = selection.text().utf8();
+    CString markup = selection.markup().utf8();
+    CString url = selection.hasURL() ? selection.url().string().utf8() : CString();
+    CString urlTitle = selection.hasURL() ? selection.urlLabel().utf8() : CString();
+    Vector<CString> files;
+    for (auto& filename : selection.filenames())
+        files.append(URL::fileURLWithFileSystemPath(filename).string().utf8());
+    Vector<const char*> fileURLs;
+    for (auto& file : files)
+        fileURLs.append(file.data());
+    RefPtr<WebCore::SharedBuffer> imageData;
+    if (RefPtr selectionImage = selection.image()) {
+        if (RefPtr data = selectionImage->data())
+            imageData = data->makeContiguous();
+    }
+
+    WKViewDragData data { };
+    data.text = selection.hasText() ? text.data() : nullptr;
+    data.markup = selection.hasMarkup() ? markup.data() : nullptr;
+    data.url = selection.hasURL() ? url.data() : nullptr;
+    data.urlTitle = selection.hasURL() ? urlTitle.data() : nullptr;
+    data.fileURLs = fileURLs.span().data();
+    data.fileURLCount = fileURLs.size();
+    data.image = imageData ? imageData->span().data() : nullptr;
+    data.imageSize = imageData ? imageData->size() : 0;
+
+    m_page->didStartDrag();
+    auto pixels = image ? image->span() : std::span<const uint8_t> { };
+    client.startDrag(toAPI(this), &data, operations.toRaw(), pixels.data(), image ? image->size().width() : 0,
+        image ? image->size().height() : 0, image ? image->bytesPerRow() : 0, WKPointMake(hotspot.x(), hotspot.y()),
+        client.base.clientInfo);
+}
+#endif
 
 } // namespace WebKit
