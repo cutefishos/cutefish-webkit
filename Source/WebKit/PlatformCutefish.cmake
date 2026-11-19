@@ -45,6 +45,7 @@ list(APPEND WebKit_SOURCES
     UIProcess/API/C/cutefish/WKMainRunLoop.cpp
     UIProcess/API/C/cutefish/WKURLSchemeHandler.cpp
     UIProcess/API/C/cutefish/WKView.cpp
+    UIProcess/API/C/cutefish/WKWebsiteDataRecords.cpp
 
     UIProcess/API/C/playstation/WKRunLoop.cpp
 
@@ -165,6 +166,7 @@ list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
     UIProcess/API/C/cutefish/WKURLSchemeHandler.h
     UIProcess/API/C/cutefish/WKView.h
     UIProcess/API/C/cutefish/WKViewClient.h
+    UIProcess/API/C/cutefish/WKWebsiteDataRecords.h
 
     UIProcess/API/C/playstation/WKRunLoop.h
 )
