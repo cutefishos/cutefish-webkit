@@ -156,6 +156,7 @@ list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
     Shared/API/c/cutefish/WKBaseCutefish.h
     Shared/API/c/cutefish/WKEventCutefish.h
 
+    UIProcess/API/C/cutefish/WKContentWorld.h
     UIProcess/API/C/cutefish/WKContextSandbox.h
     UIProcess/API/C/cutefish/WKDisplaySync.h
     UIProcess/API/C/cutefish/WKDownloadDelegate.h

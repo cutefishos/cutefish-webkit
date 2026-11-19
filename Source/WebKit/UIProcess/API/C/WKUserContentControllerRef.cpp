@@ -39,6 +39,11 @@
 #include "WebScriptMessageHandler.h"
 #include "WebUserContentControllerProxy.h"
 
+#if PLATFORM(CUTEFISH)
+#include "WKContentWorld.h"
+#include "WKContentWorldNames.h"
+#endif
+
 using namespace WebKit;
 
 WKTypeID WKUserContentControllerGetTypeID()
@@ -88,9 +93,9 @@ public:
         , m_callback(callback)
         , m_context(context) { }
 private:
-    void didPostMessage(WebPageProxy& page, FrameInfoData&& frameInfo, API::ContentWorld&, JavaScriptEvaluationResult&& result, CompletionHandler<void(Expected<JavaScriptEvaluationResult, String>&&)>&& completionHandler) override
+    void didPostMessage(WebPageProxy& page, FrameInfoData&& frameInfo, API::ContentWorld& world, JavaScriptEvaluationResult&& result, CompletionHandler<void(Expected<JavaScriptEvaluationResult, String>&&)>&& completionHandler) override
     {
-        Ref message = API::ScriptMessage::create(result.toAPI(), page, API::FrameInfo::create(WTF::move(frameInfo)), m_name, API::ContentWorld::pageContentWorldSingleton());
+        Ref message = API::ScriptMessage::create(result.toAPI(), page, API::FrameInfo::create(WTF::move(frameInfo)), m_name, world);
         Ref listener = API::CompletionListener::create([completionHandler = WTF::move(completionHandler)] (WKTypeRef reply) mutable {
             if (auto result = JavaScriptEvaluationResult::extract(protect(toImpl(reply)).get()))
                 return completionHandler(WTF::move(*result));
@@ -113,6 +118,16 @@ void WKUserContentControllerAddScriptMessageHandler(WKUserContentControllerRef u
     auto handler = WebKit::WebScriptMessageHandler::create(makeUnique<WebScriptMessageClient>(name, callback, context), name, API::ContentWorld::pageContentWorldSingleton());
     protect(toImpl(userContentController))->addUserScriptMessageHandler(handler);
 }
+
+#if PLATFORM(CUTEFISH)
+void WKUserContentControllerAddScriptMessageHandlerInWorld(WKUserContentControllerRef userContentController, WKStringRef wkName, WKStringRef world, WKScriptMessageHandlerCallback callback, const void* context)
+{
+    String name = toWTFString(wkName);
+
+    auto handler = WebKit::WebScriptMessageHandler::create(makeUnique<WebScriptMessageClient>(name, callback, context), name, contentWorldNamed(world));
+    protect(toImpl(userContentController))->addUserScriptMessageHandler(handler);
+}
+#endif
 
 void WKUserContentControllerRemoveAllUserMessageHandlers(WKUserContentControllerRef userContentController)
 {

@@ -125,6 +125,11 @@
 #include "WebContextMenuItem.h"
 #endif
 
+#if PLATFORM(CUTEFISH)
+#include "WKContentWorld.h"
+#include "WKContentWorldNames.h"
+#endif
+
 #if PLATFORM(COCOA)
 #include "DefaultWebBrowserChecks.h"
 #include <wtf/cocoa/RuntimeApplicationChecksCocoa.h>
@@ -2773,9 +2778,8 @@ void WKPageEvaluateJavaScriptInMainFrame(WKPageRef pageRef, WKStringRef scriptRe
     WKPageEvaluateJavaScriptInFrame(pageRef, nullptr, scriptRef, context, callback);
 }
 
-void WKPageEvaluateJavaScriptInFrame(WKPageRef pageRef, WKFrameInfoRef frame, WKStringRef scriptRef, void* context, WKPageEvaluateJavaScriptFunction callback)
+static void evaluateJavaScriptInFrame(WKPageRef pageRef, WKFrameInfoRef frame, WKStringRef scriptRef, API::ContentWorld& world, void* context, WKPageEvaluateJavaScriptFunction callback)
 {
-    CRASH_IF_SUSPENDED;
     auto scriptString = IPC::TransferString::create(toImpl(scriptRef)->stringView());
     if (!scriptString) {
         if (callback)
@@ -2792,13 +2796,19 @@ void WKPageEvaluateJavaScriptInFrame(WKPageRef pageRef, WKFrameInfoRef frame, WK
         std::nullopt,
         WebCore::ForceUserGesture::Yes,
         RemoveTransientActivation::Yes
-    }, frameID, API::ContentWorld::pageContentWorldSingleton(), !!callback, [context, callback] (auto&& result) {
+    }, frameID, world, !!callback, [context, callback] (auto&& result) {
         if (callback)
             callJavaScriptCallback(callback, context, WTF::move(result));
     });
 }
 
-static void callAsyncJavaScript(bool withUserGesture, WKPageRef page, WKStringRef script, WKDictionaryRef arguments, WKFrameInfoRef frame, void* context, WKPageEvaluateJavaScriptFunction callback)
+void WKPageEvaluateJavaScriptInFrame(WKPageRef pageRef, WKFrameInfoRef frame, WKStringRef scriptRef, void* context, WKPageEvaluateJavaScriptFunction callback)
+{
+    CRASH_IF_SUSPENDED;
+    evaluateJavaScriptInFrame(pageRef, frame, scriptRef, API::ContentWorld::pageContentWorldSingleton(), context, callback);
+}
+
+static void callAsyncJavaScript(bool withUserGesture, WKPageRef page, WKStringRef script, WKDictionaryRef arguments, WKFrameInfoRef frame, API::ContentWorld& world, void* context, WKPageEvaluateJavaScriptFunction callback)
 {
     auto extractArguments = [] (API::Dictionary* dictionary) -> std::optional<Vector<std::pair<String, JavaScriptEvaluationResult>>> {
         if (!dictionary)
@@ -2827,7 +2837,7 @@ static void callAsyncJavaScript(bool withUserGesture, WKPageRef page, WKStringRe
         extractArguments(protect(toImpl(arguments)).get()),
         withUserGesture ? WebCore::ForceUserGesture::Yes : WebCore::ForceUserGesture::No,
         RemoveTransientActivation::Yes
-    }, frameID, API::ContentWorld::pageContentWorldSingleton(), !!callback, [context, callback] (auto&& result) {
+    }, frameID, world, !!callback, [context, callback] (auto&& result) {
         if (callback)
             callJavaScriptCallback(callback, context, WTF::move(result));
     });
@@ -2835,13 +2845,26 @@ static void callAsyncJavaScript(bool withUserGesture, WKPageRef page, WKStringRe
 
 void WKPageCallAsyncJavaScript(WKPageRef page, WKStringRef script, WKDictionaryRef arguments, WKFrameInfoRef frame, void* context, WKPageEvaluateJavaScriptFunction callback)
 {
-    callAsyncJavaScript(true, page, script, arguments, frame, context, callback);
+    callAsyncJavaScript(true, page, script, arguments, frame, API::ContentWorld::pageContentWorldSingleton(), context, callback);
 }
 
 void WKPageCallAsyncJavaScriptWithoutUserGesture(WKPageRef page, WKStringRef script, WKDictionaryRef arguments, WKFrameInfoRef frame, void* context, WKPageEvaluateJavaScriptFunction callback)
 {
-    callAsyncJavaScript(false, page, script, arguments, frame, context, callback);
+    callAsyncJavaScript(false, page, script, arguments, frame, API::ContentWorld::pageContentWorldSingleton(), context, callback);
 }
+
+#if PLATFORM(CUTEFISH)
+void WKPageEvaluateJavaScriptInFrameInWorld(WKPageRef pageRef, WKFrameInfoRef frame, WKStringRef script, WKStringRef world, void* context, WKPageEvaluateJavaScriptFunction callback)
+{
+    CRASH_IF_SUSPENDED;
+    evaluateJavaScriptInFrame(pageRef, frame, script, contentWorldNamed(world), context, callback);
+}
+
+void WKPageCallAsyncJavaScriptInWorld(WKPageRef page, WKStringRef script, WKDictionaryRef arguments, WKFrameInfoRef frame, WKStringRef world, void* context, WKPageEvaluateJavaScriptFunction callback)
+{
+    callAsyncJavaScript(true, page, script, arguments, frame, contentWorldNamed(world), context, callback);
+}
+#endif
 
 static CompletionHandler<void(const String&)> toStringCallback(void* context, void(*callback)(WKStringRef, WKErrorRef, void*))
 {

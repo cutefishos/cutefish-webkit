@@ -30,6 +30,11 @@
 #include "APIUserScript.h"
 #include "WKAPICast.h"
 
+#if PLATFORM(CUTEFISH)
+#include "WKContentWorld.h"
+#include "WKContentWorldNames.h"
+#endif
+
 using namespace WebKit;
 
 WKTypeID WKUserScriptGetTypeID()
@@ -41,6 +46,13 @@ WKUserScriptRef WKUserScriptCreateWithSource(WKStringRef sourceRef, _WKUserScrip
 {
     return toAPILeakingRef(API::UserScript::create(WebCore::UserScript { toWTFString(sourceRef), { }, { }, { }, toUserScriptInjectionTime(injectionTime), forMainFrameOnly ? WebCore::UserContentInjectedFrames::InjectInTopFrameOnly : WebCore::UserContentInjectedFrames::InjectInAllFrames }, API::ContentWorld::pageContentWorldSingleton()));
 }
+
+#if PLATFORM(CUTEFISH)
+WKUserScriptRef WKUserScriptCreateWithSourceInWorld(WKStringRef sourceRef, _WKUserScriptInjectionTime injectionTime, bool forMainFrameOnly, WKStringRef world)
+{
+    return toAPILeakingRef(API::UserScript::create(WebCore::UserScript { toWTFString(sourceRef), { }, { }, { }, toUserScriptInjectionTime(injectionTime), forMainFrameOnly ? WebCore::UserContentInjectedFrames::InjectInTopFrameOnly : WebCore::UserContentInjectedFrames::InjectInAllFrames }, contentWorldNamed(world)));
+}
+#endif
 
 WKStringRef WKUserScriptCopySource(WKUserScriptRef userScriptRef)
 {
