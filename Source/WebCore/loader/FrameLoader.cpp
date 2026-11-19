@@ -3142,6 +3142,12 @@ void FrameLoader::checkLoadCompleteForThisFrame(LoadWillContinueInAnotherProcess
                 });
             }
 #endif
+#if PLATFORM(CUTEFISH)
+            // The document queues its title for the loader; the embedder
+            // reads the title when it hears that the load finished.
+            if (RefPtr document = m_frame->document())
+                documentLoader->setTitle(document->titleWithDirection());
+#endif
             m_client->dispatchDidFinishLoad();
             loadingEvent = AXLoadingEvent::Finished;
         }
