@@ -33,8 +33,12 @@
 #include "MessageSenderInlines.h"
 #include "RenderProcessInfo.h"
 #include "WebPageProxyMessages.h"
+#include "PrintInfo.h"
 #include "WebProcess.h"
 #include <WebCore/DocumentView.h>
+#include <WebCore/GraphicsContextSkia.h>
+#include <WebCore/PrintContext.h>
+#include <WebCore/SharedBuffer.h>
 #include <WebCore/Editor.h>
 #include <WebCore/HTMLInputElement.h>
 #include <WebCore/HTMLTextAreaElement.h>
@@ -49,6 +53,8 @@
 #include <WebCore/UserAgent.h>
 #include <WebCore/VisiblePosition.h>
 #include <WebCore/VisibleUnits.h>
+#include <skia/core/SkStream.h>
+#include <skia/docs/SkPDFDocument.h>
 #include <wtf/text/MakeString.h>
 
 #if USE(GBM)
@@ -272,6 +278,85 @@ void WebPage::getRenderProcessInfo(CompletionHandler<void(RenderProcessInfo&&)>&
 #endif // USE(GBM)
 
     static_cast<DrawingAreaCoordinatedGraphics*>(m_drawingArea.get())->fillGLInformation(WTF::move(info), WTF::move(completionHandler));
+}
+
+// JPEG images go in re-encoded as the rest; the port has no JPEG codec in the
+// graphics library.
+static sk_sp<SkDocument> makePDFDocument(SkWStream& stream)
+{
+    SkPDF::Metadata metadata;
+    metadata.allowNoJpegs = true;
+    return SkPDF::MakeDocument(&stream, metadata);
+}
+
+static RefPtr<WebCore::SharedBuffer> bufferFromStream(SkDynamicMemoryWStream& stream)
+{
+    auto data = stream.detachAsData();
+    if (!data)
+        return nullptr;
+    return WebCore::SharedBuffer::create(std::span { static_cast<const uint8_t*>(data->data()), data->size() });
+}
+
+void WebPage::drawContentsToPDF(const std::optional<WebCore::FloatRect>& rect, CompletionHandler<void(RefPtr<WebCore::SharedBuffer>&&)>&& completionHandler)
+{
+    RefPtr frameView = localMainFrameView();
+    if (!frameView) {
+        completionHandler(nullptr);
+        return;
+    }
+    frameView->updateLayoutAndStyleIfNeededRecursive();
+    auto contentsRect = WebCore::IntRect(rect.value_or(WebCore::FloatRect({ }, frameView->contentsSize())));
+    if (contentsRect.isEmpty()) {
+        completionHandler(nullptr);
+        return;
+    }
+
+    SkDynamicMemoryWStream stream;
+    auto document = makePDFDocument(stream);
+    if (!document) {
+        completionHandler(nullptr);
+        return;
+    }
+    if (auto* canvas = document->beginPage(contentsRect.width(), contentsRect.height())) {
+        WebCore::GraphicsContextSkia context(*canvas, WebCore::RenderingMode::Unaccelerated, WebCore::RenderingPurpose::Unspecified);
+        frameView->paintContentsForSnapshot(context, contentsRect, nullptr, WebCore::LocalFrameView::ExcludeSelection, WebCore::LocalFrameView::DocumentCoordinates);
+        document->endPage();
+    }
+    document->close();
+    completionHandler(bufferFromStream(stream));
+}
+
+void WebPage::drawPagesToPDFForPrinting(WebCore::FrameIdentifier frameID, const PrintInfo& printInfo, CompletionHandler<void(RefPtr<WebCore::SharedBuffer>&&)>&& completionHandler)
+{
+    Vector<WebCore::IntRect> pageRects;
+    double totalScaleFactor = 1;
+    auto margin = printInfo.margin;
+    computePagesForPrintingImpl(frameID, printInfo, pageRects, totalScaleFactor, margin);
+    RefPtr printContext = m_printContext;
+    if (!printContext) {
+        endPrinting();
+        completionHandler(nullptr);
+        return;
+    }
+
+    SkDynamicMemoryWStream stream;
+    auto document = makePDFDocument(stream);
+    if (document) {
+        float paperWidth = printInfo.availablePaperWidth + margin.left() + margin.right();
+        float paperHeight = printInfo.availablePaperHeight + margin.top() + margin.bottom();
+        for (size_t page = 0; page < printContext->pageCount(); ++page) {
+            auto* canvas = document->beginPage(paperWidth, paperHeight);
+            if (!canvas)
+                break;
+            WebCore::GraphicsContextSkia context(*canvas, WebCore::RenderingMode::Unaccelerated, WebCore::RenderingPurpose::Unspecified);
+            context.translate(margin.left(), margin.top());
+            printContext->spoolPage(context, page, printInfo.availablePaperWidth);
+            document->endPage();
+        }
+        document->close();
+    }
+    endPrinting();
+    completionHandler(document ? bufferFromStream(stream) : nullptr);
 }
 
 } // namespace WebKit

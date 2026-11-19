@@ -533,6 +533,10 @@ messages -> WebPage WantsAsyncDispatchMessage {
 #endif
     DrawToPDF(std::optional<WebCore::FloatRect> rect, bool allowTransparentBackground) -> (RefPtr<WebCore::SharedBuffer> data)
 #endif
+#if PLATFORM(CUTEFISH)
+    DrawContentsToPDF(std::optional<WebCore::FloatRect> rect) -> (RefPtr<WebCore::SharedBuffer> data)
+    DrawPagesToPDFForPrinting(WebCore::FrameIdentifier frameID, struct WebKit::PrintInfo printInfo) -> (RefPtr<WebCore::SharedBuffer> data)
+#endif
 #if PLATFORM(GTK)
     DrawPagesForPrinting(WebCore::FrameIdentifier frameID, struct WebKit::PrintInfo printInfo) -> (std::optional<WebCore::SharedMemory::Handle> data, WebCore::ResourceError error)
     DrawPagesForPrintingDuringDOMPrintOperation(WebCore::FrameIdentifier frameID, struct WebKit::PrintInfo printInfo) -> (std::optional<WebCore::SharedMemory::Handle> data, WebCore::ResourceError error) AllowedWhenWaitingForSyncReplyDuringUnboundedIPC
