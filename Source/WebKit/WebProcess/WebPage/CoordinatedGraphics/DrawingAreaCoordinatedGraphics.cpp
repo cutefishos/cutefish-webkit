@@ -610,6 +610,30 @@ static bool shouldPaintBoundsRect(const IntRect& bounds, const Vector<IntRect, 1
     return wastedSpace <= wastedSpaceThreshold;
 }
 
+#if PLATFORM(CUTEFISH)
+// What lies outside the document, such as the area under obscured content
+// insets, shows the under-page colour, as the composited surface clears it.
+static void fillOutsideDocument(WebPage& webPage, GraphicsContext& context, const Vector<IntRect>& rects)
+{
+    RefPtr page = webPage.corePage();
+    RefPtr view = webPage.localMainFrameView();
+    if (!page || !view)
+        return;
+    auto color = page->underPageBackgroundColorOverride();
+    if (!color.isValid())
+        color = page->pageExtendedBackgroundColor();
+    if (!color.isValid() || !color.isOpaque())
+        return;
+    IntRect document = view->contentsToRootView(IntRect({ }, view->contentsSize()));
+    for (const auto& rect : rects) {
+        Region outside(rect);
+        outside.subtract(document);
+        for (const auto& part : outside.rects())
+            context.fillRect(part, color);
+    }
+}
+#endif
+
 void DrawingAreaCoordinatedGraphics::display(UpdateInfo& updateInfo)
 {
     ASSERT(!m_isPaintingSuspended || m_inUpdateGeometry);
@@ -672,6 +696,10 @@ void DrawingAreaCoordinatedGraphics::display(UpdateInfo& updateInfo)
             webPage->drawRect(*graphicsContext, rect);
         updateInfo.updateRects.append(rect);
     }
+#if PLATFORM(CUTEFISH)
+    if (graphicsContext)
+        fillOutsideDocument(webPage, *graphicsContext, rects);
+#endif
 
     webPage->didUpdateRendering();
 
