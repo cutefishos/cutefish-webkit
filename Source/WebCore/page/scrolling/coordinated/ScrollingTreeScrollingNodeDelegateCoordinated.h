@@ -52,6 +52,11 @@ private:
     // ScrollingEffectsControllerClient.
     bool scrollAnimationEnabled() const final { return m_scrollAnimatorEnabled; }
 
+#if PLATFORM(CUTEFISH)
+    bool handleOverscroll(const PlatformWheelEvent&);
+    bool m_overscrolled { false };
+#endif
+
     bool m_scrollAnimatorEnabled { false };
 #if USE(COORDINATED_GRAPHICS_ASYNC_SCROLLBAR)
     const Ref<ScrollerPairCoordinated> m_scrollerPair;
