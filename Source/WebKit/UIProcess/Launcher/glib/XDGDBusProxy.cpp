@@ -82,8 +82,23 @@ std::optional<CString> XDGDBusProxy::dbusSessionProxy(const char* baseDirectory,
     m_args.append(mprisSessionID.ascii().data());
 #endif
 
+#if PLATFORM(CUTEFISH)
+    // The portal frontend acts on any file a caller can write (Trash) and keeps grants per app
+    // (ScreenCast, Secret), so web content reaches only the read-only monitors and Realtime.
+    if (allowPortals == AllowPortals::Yes) {
+        m_args.appendList<CString>({
+            "--call=org.freedesktop.portal.Desktop=org.freedesktop.DBus.Properties.Get@/org/freedesktop/portal/desktop",
+            "--call=org.freedesktop.portal.Desktop=org.freedesktop.DBus.Properties.GetAll@/org/freedesktop/portal/desktop",
+            "--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Realtime.*@/org/freedesktop/portal/desktop",
+            "--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.NetworkMonitor.*@/org/freedesktop/portal/desktop",
+            "--broadcast=org.freedesktop.portal.Desktop=org.freedesktop.DBus.Properties.PropertiesChanged@/org/freedesktop/portal/desktop",
+            "--broadcast=org.freedesktop.portal.Desktop=org.freedesktop.portal.NetworkMonitor.changed@/org/freedesktop/portal/desktop",
+        });
+    }
+#else
     if (allowPortals == AllowPortals::Yes)
         m_args.append("--talk=org.freedesktop.portal.Desktop");
+#endif
 
     if (!g_strcmp0(g_getenv("WEBKIT_ENABLE_DBUS_PROXY_LOGGING"), "1"))
         m_args.append("--log");
