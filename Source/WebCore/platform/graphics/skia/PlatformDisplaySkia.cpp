@@ -82,13 +82,26 @@ static const unsigned s_defaultSampleCount = 0;
 #if !(PLATFORM(PLAYSTATION) && USE(COORDINATED_GRAPHICS))
 static sk_sp<const GrGLInterface> skiaGLInterface()
 {
-    static NeverDestroyed<sk_sp<const GrGLInterface>> grGLInterface {
+    static NeverDestroyed<sk_sp<const GrGLInterface>> grGLInterface { [] {
+        sk_sp<const GrGLInterface> made =
 #if USE(LIBEPOXY)
-        GrGLInterfaces::MakeEpoxyEGL()
+            GrGLInterfaces::MakeEpoxyEGL();
 #else
-        GrGLInterfaces::MakeEGL()
+            GrGLInterfaces::MakeEGL();
 #endif
-    };
+#if PLATFORM(CUTEFISH)
+        // Frames read in place through these go with GPU resets on some
+        // drivers, so Skia takes the copying path it takes where they are missing.
+        if (made) {
+            auto& extensions = const_cast<GrGLInterface*>(made.get())->fExtensions;
+            for (const char* name : { "GL_EXT_shader_framebuffer_fetch", "GL_NV_shader_framebuffer_fetch",
+                "GL_ARM_shader_framebuffer_fetch", "GL_KHR_blend_equation_advanced_coherent",
+                "GL_NV_blend_equation_advanced_coherent" })
+                extensions.remove(name);
+        }
+#endif
+        return made;
+    }() };
 
     return grGLInterface.get();
 }
